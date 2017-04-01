@@ -10,7 +10,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
-use workspace.GamePackage.all;
+use work.GamePackage.all;
 
 entity MainGame is
 	port (
@@ -21,6 +21,7 @@ entity MainGame is
 		-- start game
 		game_start : in std_logic;
 		
+		-- user input mapping signals
 		-- switches for game board column selection
 		sw : in std_logic_vector(6 downto 0);
 		-- play column
