@@ -10,30 +10,30 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
-use workspace.GamePackage.GAME_BOARD;
+use work.GamePackage.GAME_BOARD;
 
 entity UserInputModule is
 	port (
 		-- system clock
 		clk_in : in std_logic;
-		-- game over/reset
-		game_reset_in : in std_logic;
 		-- switches for game board column selection
 		sw_in : in std_logic_vector(6 downto 0);
 		-- play column
 		submit_play_in : in std_logic;
 		-- input signals from master module
-		p1_turn_in : in  std_logic;
+		turn_in : in  std_logic;
 		-- master playing board to check for move validity
 		master_board_in : in GAME_BOARD;
 		
 		-- output signals to master module
 		-- played column (o through 7)
-		p1_play_col_out : out std_logic_vector(2 downto 0);
+		play_col_out : out std_logic_vector(2 downto 0);
+		-- play invalid
+		move_invalid_out : out std_logic;
+		-- play attempted
+		move_attempted_out : out std_logic;
 		-- played handshake
-		p1_played_out : out std_logic;
-		-- ended game
-		p1_ends_game_out : out std_logic);
+		played_out : out std_logic);
 end UserInputModule;
 
 architecture Behavioral of UserInputModule is
@@ -42,15 +42,15 @@ architecture Behavioral of UserInputModule is
 	-- state machine
 	type P1_STATE is (
 		ST_IDLE,
-		ST_END_GAME,
-		ST_PLAY);
+		ST_PLAY,
+		ST_PLAY_ATTEMPT);
 	signal state : P1_STATE := ST_IDLE;
 begin
 	-- read user input if p1 is allowed to play (in the play state)
-	updatePlayValid : process(clk_in, state, submit_play_in, sw_in, master_board_in)
+	updatePlayValid : process(clk_in, state, sw_in, master_board_in)
 	begin
 		if (rising_edge(clk_in)) then
-			if (state = ST_PLAY and submit_play_in = '1') then
+			if (state = ST_PLAY) then
 				case sw_in(6 downto 0) is
 					when "1000000" =>
 						if (master_board_in(5)(0) = '0') then
@@ -89,76 +89,90 @@ begin
 		end if;
 	end process updatePlayValid;
 	
+	updateMoveAttempted : process(clk_in, submit_play_in)
+	begin
+		if (rising_edge(clk_in)) then
+			if (submit_play_in = '1') then
+				move_attempted_out <= '1';
+			else
+				move_attempted_out <= '0';
+			end if;
+		end if;
+	end process updateMoveAttempted;
+	
+	updatePlayInvalid : process(clk_in, play_valid)
+	begin
+		if (rising_edge(clk_in)) then
+			case play_valid is
+				when '1' =>
+					move_invalid_out <= '0';
+				when others =>
+					move_invalid_out <= '1';
+			end case;
+		end if;
+	end process updatePlayInvalid;
+	
 	updatePlayCol : process(clk_in, state, play_valid)
 	begin
 		if (rising_edge(clk_in)) then
 			if (state = ST_PLAY and play_valid = '1') then
 				case sw_in(6 downto 0) is
 					when "1000000" =>
-						p1_play_col_out <= "000";
+						play_col_out <= "000";
 					when "0100000" =>
-						p1_play_col_out <= "001";
+						play_col_out <= "001";
 					when "0010000" =>
-						p1_play_col_out <= "010";
+						play_col_out <= "010";
 					when "0001000" =>
-						p1_play_col_out <= "011";
+						play_col_out <= "011";
 					when "0000100" =>
-						p1_play_col_out <= "100";
+						play_col_out <= "100";
 					when "0000010" =>
-						p1_play_col_out <= "101";
+						play_col_out <= "101";
 					when "0000001" =>
-						p1_play_col_out <= "110";
+						play_col_out <= "110";
 					when others =>
-						p1_play_col_out <= "000";
+						play_col_out <= "000";
 				end case;
 			else
-				p1_play_col_out <= "000";
+				play_col_out <= "000";
 			end if;
 		end if;
 	end process updatePlayCol;
 	
-	updateP1Played : process(clk_in, state, play_valid)
+	updateP1Played : process(clk_in, state, play_valid, submit_play_in)
 	begin
 		if (rising_edge(clk_in)) then
-			if (state = ST_IDLE and play_valid = '1') then
-				p1_played_out <= '1';
+			if (state = ST_PLAY_ATTEMPT and play_valid = '1') then
+				played_out <= '1';
 			else
-				p1_played_out <= '0';
+				played_out <= '0';
 			end if;
 		end if;
 	end process updateP1Played;
-	
-	updateP1EndsGame : process(clk_in, game_reset_in)
-	begin
-		if (rising_edge(clk_in)) then
-			if (game_reset_in = '1') then
-				p1_ends_game_out <= '1';
-			else
-				p1_ends_game_out <= '0';
-			end if;
-		end if;
-	end process updateP1EndsGame;
 
 	-- state machine
-	updateState : process(clk_in, state, p1_turn_in, game_reset_in, play_valid)
+	updateState : process(clk_in, state, turn_in, play_valid)
 	begin
 		if (rising_edge(clk_in)) then
-			if (game_reset_in = '1') then
-				state <= ST_END_GAME;
-			else
-				case state is
-					when ST_IDLE =>
-						if (p1_turn_in = '1') then
-							state <= ST_PLAY;
-						end if;
-					when ST_PLAY =>
-						if (play_valid = '1') then
-							state <= ST_IDLE;
-						end if;
-					when ST_END_GAME =>
+			case state is
+				when ST_IDLE =>
+					if (turn_in = '1') then
+						state <= ST_PLAY;
+					end if;
+				when ST_PLAY =>
+					if (submit_play_in = '1') then
+						state <= ST_PLAY_ATTEMPT;
+					end if;
+				when ST_PLAY_ATTEMPT =>
+					if (play_valid = '1') then
 						state <= ST_IDLE;
-				end case;
-			end if;
+					else
+						state <= ST_PLAY;
+					end if;
+				when others =>
+					state <= ST_IDLE;
+			end case;
 		end if;
 	end process updateState;
 	
