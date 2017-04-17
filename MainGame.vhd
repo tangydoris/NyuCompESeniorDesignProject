@@ -68,7 +68,8 @@ architecture Behavioral of MainGame is
 		ST_IDLE,
 		ST_INITIALIZATION,
 		ST_P1_PLAY,
-		ST_P1_MOVE_ATTEMPT,
+		ST_P1_MOVE_INVALID,
+		ST_P1_MOVE_VALID,
 		ST_P2_PLAY,
 		ST_CALCULATION,
 		ST_GAME_OVER);
@@ -194,41 +195,40 @@ begin
 					when "001" => sseg_ca <= "0001000"; -- A
 					when others => sseg_ca <= "0011001"; -- Y
 				end case;
-			elsif (state = ST_P1_MOVE_ATTEMPT) then
-				-- display move validity
-				if (p1_move_invalid = '0') then
-					case annodeNum(2 downto 0) is
-						when "111" => sseg_ca <= "1000110"; -- C
-						when "110" => sseg_ca <= "1000000"; -- 0
-						when "101" => sseg_ca <= "1000111"; -- L
-						when "100" => sseg_ca <= "1111111"; --
-						when "011" => 
-							case p1_play_col(2 downto 0) is
-								when "000" => sseg_ca <= "1000000"; -- 0
-								when "001" => sseg_ca <= "1001111"; -- 1
-								when "010" => sseg_ca <= "0100100"; -- 2
-								when "011" => sseg_ca <= "0110000"; -- 3
-								when "100" => sseg_ca <= "0011001"; -- 4
-								when "101" => sseg_ca <= "0010010"; -- 5
-								when "110" => sseg_ca <= "0000010"; -- 6
-								when others => sseg_ca <= "1111111"; --
-							end case;
-						when "010" => sseg_ca <= "1111111"; --
-						when "001" => sseg_ca <= "1111111"; --
-						when others => sseg_ca <= "1111111"; --
-					end case;
-				else
-					case annodeNum(2 downto 0) is
-						when "111" => sseg_ca <= "1001000"; -- n
-						when "110" => sseg_ca <= "1000000"; -- 0
-						when "101" => sseg_ca <= "0000111"; -- t
-						when "100" => sseg_ca <= "1111111"; --
-						when "011" => sseg_ca <= "1000001"; -- V
-						when "010" => sseg_ca <= "0001000"; -- A
-						when "001" => sseg_ca <= "1000111"; -- L
-						when others => sseg_ca <= "1001111"; -- I
-					end case;
-				end if;
+			elsif (state = ST_P1_MOVE_VALID) then
+				-- display VALID move made
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "1000110"; -- C
+					when "110" => sseg_ca <= "1000000"; -- 0
+					when "101" => sseg_ca <= "1000111"; -- L
+					when "100" => sseg_ca <= "1111111"; --
+					when "011" => 
+						case p1_play_col(2 downto 0) is
+							when "111" => sseg_ca <= "1111000"; -- 7
+							when "110" => sseg_ca <= "0000010"; -- 6
+							when "101" => sseg_ca <= "0010010"; -- 5
+							when "100" => sseg_ca <= "0011001"; -- 4
+							when "011" => sseg_ca <= "0110000"; -- 3
+							when "010" => sseg_ca <= "0100100"; -- 2
+							when "001" => sseg_ca <= "1001111"; -- 1
+							when others => sseg_ca <= "1000000"; -- 0
+						end case;
+					when "010" => sseg_ca <= "1111111"; --
+					when "001" => sseg_ca <= "1111111"; --
+					when others => sseg_ca <= "1111111"; --
+				end case;
+			elsif (state = ST_P1_MOVE_INVALID) then
+				-- display that move is INVALID
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "1001000"; -- n
+					when "110" => sseg_ca <= "1000000"; -- 0
+					when "101" => sseg_ca <= "0000111"; -- t
+					when "100" => sseg_ca <= "1111111"; --
+					when "011" => sseg_ca <= "1000001"; -- V
+					when "010" => sseg_ca <= "0001000"; -- A
+					when "001" => sseg_ca <= "1000111"; -- L
+					when others => sseg_ca <= "1001111"; -- I
+				end case;
 			elsif (state = ST_P2_play) then
 				case annodeNum(2 downto 0) is
 					when "111" => sseg_ca <= "0001100"; -- P
@@ -351,7 +351,7 @@ begin
 	begin
 		if (rising_edge(clk)) then
 			if (p1_turn = '1') then
-				if (state = ST_P1_PLAY or state = ST_P1_MOVE_ATTEMPT) then
+				if (state = ST_P1_PLAY or state = ST_P1_MOVE_VALID or state = ST_P1_MOVE_INVALID) then
 					p1_turn_led <= '1';
 				else
 					p1_turn_led <= '0';
@@ -659,15 +659,19 @@ begin
 						state <= ST_P1_PLAY;
 					when ST_P1_PLAY =>
 						if (submit_play = '1') then
-							state <= ST_P1_MOVE_ATTEMPT;
-						end if;
-					when ST_P1_MOVE_ATTEMPT =>
-						if (submit_play = '0') then
 							if (p1_move_invalid = '1') then
-								state <= ST_P1_PLAY;
+								state <= ST_P1_MOVE_INVALID;
 							else
-								state <= ST_CALCULATION;
+								state <= ST_P1_MOVE_VALID;
 							end if;
+						end if;
+					when ST_P1_MOVE_INVALID =>
+						if (submit_play = '0') then
+								state <= ST_P1_PLAY;
+						end if;
+					when ST_P1_MOVE_VALID =>
+						if (submit_play = '0') then
+								state <= ST_CALCULATION;
 						end if;
 					when ST_P2_PLAY =>
 						if (p2_played = '1') then
