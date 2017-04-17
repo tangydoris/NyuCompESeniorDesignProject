@@ -12,6 +12,7 @@ use IEEE.NUMERIC_STD.ALL;
 
 package GamePackage is
 	type GAME_BOARD is array(5 downto 0) of std_logic_vector(6 downto 0);
+	type VALID_ROWS is array(6 downto 0) of std_logic_vector(2 downto 0);
 	
 	component UserInputModule is
 		port (
@@ -22,7 +23,6 @@ package GamePackage is
 			master_board_in : in GAME_BOARD;
 			play_col_out : out std_logic_vector(2 downto 0);
 			move_invalid_out : out std_logic;
-			move_attempted_out : out std_logic;
 			played_out : out std_logic);
 	end component;
 	
