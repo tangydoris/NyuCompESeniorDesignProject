@@ -101,25 +101,25 @@ begin
 				case sw_in(6 downto 0) is
 					when "0000001" =>
 						-- col 7 (rightmost col)
-						play_col_out <= "111";
+						play_col_out <= "110";
 					when "0000010" =>
 						-- col 6
-						play_col_out <= "110";
+						play_col_out <= "101";
 					when "0000100" =>
 						-- col 5
-						play_col_out <= "101";
+						play_col_out <= "100";
 					when "0001000" =>
 						-- col 4
-						play_col_out <= "100";
+						play_col_out <= "011";
 					when "0010000" =>
 						-- col 3
-						play_col_out <= "011";
+						play_col_out <= "010";
 					when "0100000" =>
 						-- col 2
-						play_col_out <= "010";
+						play_col_out <= "001";
 					when "1000000" =>
 						-- col 1
-						play_col_out <= "001";
+						play_col_out <= "000";
 					when others =>
 						-- col 0 (leftmost col)
 						play_col_out <= "000";
