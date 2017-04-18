@@ -29,9 +29,7 @@ entity UserInputModule is
 		-- played column (o through 7)
 		play_col_out : out std_logic_vector(2 downto 0);
 		-- play invalid
-		move_invalid_out : out std_logic;
-		-- played handshake
-		played_out : out std_logic);
+		move_invalid_out : out std_logic);
 end UserInputModule;
 
 architecture Behavioral of UserInputModule is
@@ -47,69 +45,54 @@ begin
 	updatePlayValid : process(clk_in, state, sw_in, master_board_in)
 	begin
 		if (rising_edge(clk_in)) then
-			if (state = ST_PLAY) then
-				case sw_in(6 downto 0) is
-					when "1000000" =>
-						if (master_board_in(5)(0) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when "0100000" =>
-						if (master_board_in(5)(1) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when "0010000" =>
-						if (master_board_in(5)(2) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when "0001000" =>
-						if (master_board_in(5)(3) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when "0000100" =>
-						if (master_board_in(5)(4) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when "0000010" =>
-						if (master_board_in(5)(5) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when "0000001" =>
-						if (master_board_in(5)(6) = '0') then
-							play_valid <= '1';
-						else
-							play_valid <= '0';
-						end if;
-					when others =>
+			case sw_in(6 downto 0) is
+				when "1000000" =>
+					if (master_board_in(5)(0) = '0') then
+						play_valid <= '1';
+					else
 						play_valid <= '0';
-				end case;
-			else
-				play_valid <= '0';
-			end if;
+					end if;
+				when "0100000" =>
+					if (master_board_in(5)(1) = '0') then
+						play_valid <= '1';
+					else
+						play_valid <= '0';
+					end if;
+				when "0010000" =>
+					if (master_board_in(5)(2) = '0') then
+						play_valid <= '1';
+					else
+						play_valid <= '0';
+					end if;
+				when "0001000" =>
+					if (master_board_in(5)(3) = '0') then
+						play_valid <= '1';
+					else
+						play_valid <= '0';
+					end if;
+				when "0000100" =>
+					if (master_board_in(5)(4) = '0') then
+						play_valid <= '1';
+					else
+						play_valid <= '0';
+					end if;
+				when "0000010" =>
+					if (master_board_in(5)(5) = '0') then
+						play_valid <= '1';
+					else
+						play_valid <= '0';
+					end if;
+				when "0000001" =>
+					if (master_board_in(5)(6) = '0') then
+						play_valid <= '1';
+					else
+						play_valid <= '0';
+					end if;
+				when others =>
+					play_valid <= '0';
+			end case;
 		end if;
 	end process updatePlayValid;
-	
-	updatePlayInvalid : process(clk_in, play_valid)
-	begin
-		if (rising_edge(clk_in)) then
-			if (play_valid = '1') then
-				move_invalid_out <= '0';
-			else
-				move_invalid_out <= '1';
-			end if;
-		end if;
-	end process updatePlayInvalid;
 	
 	updatePlayCol : process(clk_in, submit_play_in, play_valid)
 	begin
@@ -144,17 +127,6 @@ begin
 			end if;
 		end if;
 	end process updatePlayCol;
-	
-	updateP1Played : process(clk_in, state, play_valid, submit_play_in)
-	begin
-		if (rising_edge(clk_in)) then
-			if (submit_play_in = '1' and play_valid = '1') then
-				played_out <= '1';
-			else
-				played_out <= '0';
-			end if;
-		end if;
-	end process updateP1Played;
 
 	-- state machine
 	updateState : process(clk_in, state, turn_in, play_valid)
@@ -172,6 +144,12 @@ begin
 			end case;
 		end if;
 	end process updateState;
+
+	-- asynchronously update invalid move signal
+	with play_valid select move_invalid_out <=
+		'1' when '0',
+		'0' when '1';
+		
 	
 end Behavioral;
 

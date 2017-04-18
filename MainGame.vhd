@@ -28,6 +28,9 @@ entity MainGame is
 		submit_play : in std_logic;
 		p1_turn_led : out std_logic;
 		
+		-- temporary P2 signal to submit hardcoded play in col 1 (really col 0)
+		p2_submit_play : in std_logic;
+		
 		-- game state display via 7 segment display
 		-- 7 cathodes (the individual segments)
 		sseg_ca : out std_logic_vector(6 downto 0);
@@ -51,13 +54,11 @@ architecture Behavioral of MainGame is
 	signal p1_turn : std_logic := '0';
 	signal p1_play_col : std_logic_vector(2 downto 0) := (others => '0');
 	signal p1_move_invalid : std_logic := '0';
-	signal p1_played : std_logic := '0';
 	signal p1_wins : std_logic := '0';
 	
 	-- player 2 signals
 	signal p2_turn : std_logic := '0';
 	signal p2_play_col : std_logic_vector(2 downto 0) := (others => '0');
-	-- change this back to 0 for initialization
 	signal p2_played : std_logic := '0';
 	signal p2_wins : std_logic := '0';
 	
@@ -100,8 +101,7 @@ begin
 		master_board_in => master_board,
 		-- out
 		play_col_out => p1_play_col,
-		move_invalid_out => p1_move_invalid,
-		played_out => p1_played);
+		move_invalid_out => p1_move_invalid);
 	
 	-- map A.I. module component
 --	machineModule : AiModule port map(
@@ -240,6 +240,17 @@ begin
 					when "001" => sseg_ca <= "0001000"; -- A
 					when others => sseg_ca <= "0011001"; -- Y
 				end case;
+			elsif (state = ST_CALCULATION) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "1000110"; -- C
+					when "110" => sseg_ca <= "0001000"; -- A
+					when "101" => sseg_ca <= "1000111"; -- L
+					when "100" => sseg_ca <= "1000110"; -- C
+					when "011" => sseg_ca <= "1000001"; -- U
+					when "010" => sseg_ca <= "1000111"; -- L
+					when "001" => sseg_ca <= "0001000"; -- A
+					when others => sseg_ca <= "0000111"; -- t
+				end case;
 			else
 				-- placeholder
 				case annodeNum(2 downto 0) is
@@ -257,10 +268,10 @@ begin
 	end process updateCathodes;
 	
 	-- update max-row vector
-	updateValidRows : process(clk, p1_played, p2_played)
+	updateValidRows : process(clk, state, p2_played)
 	begin
 		if (rising_edge(clk)) then
-			if (p1_played = '1') then
+			if (state = ST_P1_MOVE_VALID) then
 				case p1_play_col(2 downto 0) is
 					when "110" =>
 						if (next_valid_rows(6) < 6) then
@@ -327,19 +338,22 @@ begin
 	end process updateValidRows;
 	
 	-- used for testing ONLY - must remove
-	updateP2Turn : process(clk, p2_turn)
+	updateP2Turn : process(clk, p1_turn)
 	begin
 		if (rising_edge(clk)) then
-			if (p2_turn = '1') then
+			if (p1_turn = '1') then
 				p2_turn <= '0';
+			else
+				p2_turn <= '1';
 			end if;
 		end if;
 	end process updateP2Turn;
+	
 	-- used for testing ONLY - must remove
-	updateP2Played : process(clk, p2_turn)
+	updateP2Played : process(clk, state, p2_submit_play)
 	begin
 		if (rising_edge(clk)) then
-			if (p2_turn = '1') then
+			if (state = ST_P2_PLAY and p2_submit_play = '1') then
 				p2_played <= '1';
 			else
 				p2_played <= '0';
@@ -347,15 +361,11 @@ begin
 		end if;
 	end process updateP2Played;
 	
-	updateP1TurnLed : process(clk, p1_turn)
+	updateP1TurnLed : process(clk, state)
 	begin
 		if (rising_edge(clk)) then
-			if (p1_turn = '1') then
-				if (state = ST_P1_PLAY or state = ST_P1_MOVE_VALID or state = ST_P1_MOVE_INVALID) then
-					p1_turn_led <= '1';
-				else
-					p1_turn_led <= '0';
-				end if;
+			if (state = ST_P1_PLAY or state = ST_P1_MOVE_VALID or state = ST_P1_MOVE_INVALID) then
+				p1_turn_led <= '1';
 			else
 				p1_turn_led <= '0';
 			end if;
@@ -365,6 +375,7 @@ begin
 	updateP1Board : process(clk, state, master_board)
 	begin
 		if (rising_edge(clk)) then
+			-- ** IMPLEMENT THIS **
 			if (state = ST_INITIALIZATION) then
 				p1_board <= (others => (others => '0'));
 			end if;
@@ -374,13 +385,14 @@ begin
 	updateP2Board : process(clk, state, master_board)
 	begin
 		if (rising_edge(clk)) then
+			-- ** IMPLEMENT THIS **
 			if (state = ST_INITIALIZATION) then
 				p2_board <= (others => (others => '0'));
 			end if;
 		end if;
 	end process updateP2Board;
 	
-	updateMasterBoard : process(clk, state, master_board)
+	updateMasterBoard : process(clk, state, p1_turn, master_board)
 	begin
 		if (rising_edge(clk)) then
 			if (state = ST_INITIALIZATION) then
@@ -627,24 +639,22 @@ begin
 		end if;
 	end process calculateWinner;
 	
-	updateTurn : process(clk, p1_played, p2_played)
+	updateP1Turn : process(clk, state, p2_submit_play)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_P1_PLAY) then
-				if (p1_played = '1') then
-						p1_turn <= '0';
-					end if;
+			if (state = ST_P1_MOVE_VALID) then
+				p1_turn <= '0';
 			elsif (state = ST_P2_PLAY) then
-				if (p2_played = '1') then
-						p1_turn <= '1';
-					end if;
+				if (p2_submit_play = '1') then
+					p1_turn <= '1';
+				end if;
 			elsif (state = ST_INITIALIZATION) then
 				p1_turn <= '1';
 			end if;
 		end if;
-	end process updateTurn;
+	end process updateP1Turn;
 	
-	updateState : process(clk, state, game_start, calculation_complete, submit_play, p1_turn, p1_played, p1_wins, game_reset, p2_played, p2_wins)
+	updateState : process(clk, state, game_start, calculation_complete, submit_play, p1_turn,  p1_wins, game_reset, p2_submit_play, p2_played, p2_wins)
 	begin
 		if (rising_edge(clk)) then
 			if (game_reset = '1' or p1_wins = '1' or p2_wins = '1') then
@@ -674,7 +684,7 @@ begin
 								state <= ST_CALCULATION;
 						end if;
 					when ST_P2_PLAY =>
-						if (p2_played = '1') then
+						if (p2_submit_play = '1') then
 							state <= ST_CALCULATION;
 						end if;
 					when ST_CALCULATION =>

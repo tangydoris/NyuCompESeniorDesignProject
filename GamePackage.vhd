@@ -22,8 +22,7 @@ package GamePackage is
 			turn_in : in std_logic;
 			master_board_in : in GAME_BOARD;
 			play_col_out : out std_logic_vector(2 downto 0);
-			move_invalid_out : out std_logic;
-			played_out : out std_logic);
+			move_invalid_out : out std_logic);
 	end component;
 	
 	component AiModule is
