@@ -38,6 +38,21 @@ package GamePackage is
 		);
 	end component;
 	
+	component DisplayModule is
+		port (
+			CLK_I : in STD_LOGIC;
+			VGA_HS_O : out STD_LOGIC;
+			VGA_VS_O : out STD_LOGIC;
+			VGA_RED_O : out STD_LOGIC_VECTOR (3 downto 0);
+			VGA_BLUE_O : out STD_LOGIC_VECTOR (3 downto 0);
+			VGA_GREEN_O : out STD_LOGIC_VECTOR (3 downto 0);
+			PS2_CLK : inout STD_LOGIC;
+			PS2_DATA : inout STD_LOGIC;
+			p1_board : in GAME_BOARD;
+			p2_board : in GAME_BOARD
+		);
+	end component;
+	
 end GamePackage;
 
 package body GamePackage is

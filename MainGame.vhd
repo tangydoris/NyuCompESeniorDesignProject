@@ -34,16 +34,16 @@ entity MainGame is
 		-- 7 cathodes (the individual segments)
 		sseg_ca : out std_logic_vector(6 downto 0);
 		-- 8 displays (each letter/number display)
-		sseg_an : out std_logic_vector(7 downto 0)
+		sseg_an : out std_logic_vector(7 downto 0);
 		
 		-- VGA display
---		vga_red_o : out std_logic_vector(3 downto 0);
---		vga_green_o : out std_logic_vector(3 downto 0);
---		vga_blue_o : out std_logic_vector(3 downto 0);
---		vga_hs_o : out std_logic;
---		vga_vs_o : out std_logic;
---		ps2_clk : inout std_logic;
---		ps2_data : inout std_logic
+		vga_red_o : out std_logic_vector(3 downto 0);
+		vga_green_o : out std_logic_vector(3 downto 0);
+		vga_blue_o : out std_logic_vector(3 downto 0);
+		vga_hs_o : out std_logic;
+		vga_vs_o : out std_logic;
+		ps2_clk : inout std_logic;
+		ps2_data : inout std_logic
 	);
 end MainGame;
 
@@ -117,6 +117,20 @@ begin
 		turn => p2_turn,
 		play_col => p2_play_col,
 		played => p2_played
+	);
+	
+	-- map Display Module component
+	vgaModule : DisplayModule port map(
+		CLK_I => clk,
+		VGA_HS_O => vga_hs_o,
+		VGA_VS_O => vga_vs_o,
+		VGA_RED_O => vga_red_o,
+		VGA_BLUE_O => vga_blue_o,
+		VGA_GREEN_O => vga_green_o,
+		PS2_CLK => ps2_clk,
+		PS2_DATA => ps2_data,
+		p1_board => p1_board,
+		p2_board => p2_board
 	);
 	
 	-- update clock divider
