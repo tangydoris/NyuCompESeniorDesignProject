@@ -26,11 +26,9 @@ entity MainGame is
 		sw : in std_logic_vector(6 downto 0);
 		-- play column
 		submit_play : in std_logic;
+		
 		p1_turn_led : out std_logic;
 		p2_turn_led : out std_logic;
-		
-		-- temporary P2 signal to submit hardcoded play in col 1 (really col 0)
-		p2_submit_play : in std_logic;
 		
 		-- game state display via 7 segment display
 		-- 7 cathodes (the individual segments)
@@ -39,11 +37,13 @@ entity MainGame is
 		sseg_an : out std_logic_vector(7 downto 0)
 		
 		-- VGA display
---		vga_r : out std_logic_vector(3 downto 0);
---		vga_g : out std_logic_vector(3 downto 0);
---		vga_b : out std_logic_vector(3 downto 0);
---		vga_hs : out std_logic;
---		vga_vs : out std_logic
+--		vga_red_o : out std_logic_vector(3 downto 0);
+--		vga_green_o : out std_logic_vector(3 downto 0);
+--		vga_blue_o : out std_logic_vector(3 downto 0);
+--		vga_hs_o : out std_logic;
+--		vga_vs_o : out std_logic;
+--		ps2_clk : inout std_logic;
+--		ps2_data : inout std_logic
 	);
 end MainGame;
 
@@ -95,29 +95,30 @@ architecture Behavioral of MainGame is
 	signal annodeNum : std_logic_vector(2 downto 0) := (others => '0');
 
 begin
-	-- map user input module component
-	inputModule : UserInputModule port map(
+	-- map User Input Module component
+	uiModule : UserInputModule port map(
 		-- in
-		clk_in => clk,
-		sw_in => sw,
-		submit_play_in => submit_play,
-		turn_in => p1_turn,
-		master_board_in => master_board,
+		clk => clk,
+		sw => sw,
+		submit_play => submit_play,
+		turn => p1_turn,
+		master_board => master_board,
 		-- out
-		play_col_out => p1_play_col,
-		move_invalid_out => p1_move_invalid);
+		play_col => p1_play_col,
+		move_invalid => p1_move_invalid
+	);
 	
-	-- map A.I. module component
---	machineModule : AiModule port map(
---		clk_in => clk,
---		master_board_in => master_board,
---		p1_board_in => p1_board,
---		own_board_in => p2_board,
---		turn_in => p2_turn,
---		play_col_out => p2_play_col,
---		played_out => p2_played);
-
-	-- processes
+	-- map A.I. Module component
+	aiModule : ArtificialIntelligenceModule port map(
+		clk => clk,
+		master_board => master_board,
+		p1_board => p1_board,
+		own_board => p2_board,
+		turn => p2_turn,
+		play_col => p2_play_col,
+		played => p2_played
+	);
+	
 	-- update clock divider
 	updateClockDivider : process(clk) 
 	begin
@@ -341,18 +342,6 @@ begin
 			end if;
 		end if;
 	end process updateNextValidRows;
-	
-	-- used for testing ONLY - must remove
-	updateP2Played : process(clk, state, p2_submit_play)
-	begin
-		if (rising_edge(clk)) then
-			if (state = ST_P2_PLAY and p2_submit_play = '1') then
-				p2_played <= '1';
-			else
-				p2_played <= '0';
-			end if;
-		end if;
-	end process updateP2Played;
 	
 	updateP2TurnLed : process(clk, state)
 	begin
@@ -839,7 +828,7 @@ begin
 		end if;
 	end process calculateWinner;
 	
-	updateState : process(clk, state, game_start, submit_play, p1_turn,  p1_wins, game_reset, p2_submit_play, p2_played, p2_wins)
+	updateState : process(clk, state, game_start, submit_play, p1_turn,  p1_wins, game_reset, p2_played, p2_wins)
 	begin
 		if (rising_edge(clk)) then
 			if (game_reset = '1' or p1_wins = '1' or p2_wins = '1') then
@@ -873,7 +862,7 @@ begin
 					when ST_UPDATE_NEXT_VALID_ROWS_P1 =>
 						state <= ST_UPDATE_MASTER_BOARD;
 					when ST_P2_PLAY =>
-						if (p2_submit_play = '1') then
+						if (p2_played = '1') then
 							state <= ST_UPDATE_P2_BOARD;
 						end if;
 					when ST_UPDATE_P2_BOARD =>
@@ -886,7 +875,7 @@ begin
 						if (p1_turn = '1') then
 							state <= ST_P1_PLAY;
 						else
-							state <= ST_P2_play;
+							state <= ST_P2_PLAY;
 						end if;
 					when ST_GAME_OVER =>
 						state <= ST_IDLE;
@@ -897,23 +886,31 @@ begin
 		end if;
 	end process updateState;
 	
-	updateP1Turn : process(clk, state, p2_submit_play)
+	updateP1Turn : process(clk, state)
 	begin
-		if (state = ST_P1_MOVE_VALID) then
-			p1_turn <= '0';
-		elsif (state = ST_P2_PLAY) then
-			if (p2_submit_play = '1') then
+		if (rising_edge(clk)) then
+			if (state = ST_P1_MOVE_VALID) then
+				p1_turn <= '0';
+			elsif (state = ST_P2_PLAY) then
+				if (p2_played = '1') then
+					p1_turn <= '1';
+				end if;
+			elsif (state = ST_INITIALIZATION) then
 				p1_turn <= '1';
 			end if;
-		elsif (state = ST_INITIALIZATION) then
-			p1_turn <= '1';
 		end if;
 	end process updateP1Turn;
 	
-	-- asynchronously update p2 turn (signal should reflect changes in p1_turn immediately)
-	with p1_turn select p2_turn <=
-		'0' when '1',
-		'1' when '0';
-
+	updateP2Turn : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P2_PLAY) then
+				p2_turn <= '1';
+			else
+				p2_turn <= '0';
+			end if;
+		end if;
+	end process updateP2Turn;
+	
 end Behavioral;
 

@@ -16,24 +16,26 @@ package GamePackage is
 	
 	component UserInputModule is
 		port (
-			clk_in : in std_logic;
-			sw_in : in std_logic_vector(6 downto 0);
-			submit_play_in : in std_logic;
-			turn_in : in std_logic;
-			master_board_in : in GAME_BOARD;
-			play_col_out : out std_logic_vector(2 downto 0);
-			move_invalid_out : out std_logic);
+			clk : in std_logic;
+			sw : in std_logic_vector(6 downto 0);
+			submit_play : in std_logic;
+			turn : in std_logic;
+			master_board : in GAME_BOARD;
+			play_col : out std_logic_vector(2 downto 0);
+			move_invalid : out std_logic
+		);
 	end component;
 	
-	component AiModule is
+	component ArtificialIntelligenceModule is
 		port (
-			clk_in : in std_logic;
-			master_board_in : in GAME_BOARD;
-			p1_board_in : in GAME_BOARD;
-			own_board_in : in GAME_BOARD;
-			turn_in : in std_logic;
-			play_col_out : out std_logic_vector(2 downto 0);
-			played_out : out std_logic);
+			clk : in std_logic;
+			master_board : in GAME_BOARD;
+			p1_board : in GAME_BOARD;
+			own_board : in GAME_BOARD;
+			turn : in std_logic;
+			play_col : out std_logic_vector(2 downto 0);
+			played : out std_logic
+		);
 	end component;
 	
 end GamePackage;
