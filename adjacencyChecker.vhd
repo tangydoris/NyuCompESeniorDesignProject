@@ -96,8 +96,8 @@ begin
 					end if;
 				end loop;
 			end if;		
-		end if;		
-			
+		end if;	
+	end process horizontalCheck;		
 	
 	updateState : process(clk, state, turn, move_calculated)
 	begin
