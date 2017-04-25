@@ -84,7 +84,7 @@ begin
 							when "1101" => horizontalColSel <= leadingColumn-"001";
 							when "1011" => horizontalColSel <= leadingColumn-"010";
 							when "0111" => horizontalColSel <= leadingColumn-"011";
-							when others => horizontalColSel <= "111" --invalid value;
+							when others => horizontalColSel <= "111"; --invalid value;
 						end case;
 						
 						if(horizontalColSel != "111") then
