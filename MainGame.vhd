@@ -327,7 +327,7 @@ begin
 	updateSwLeds : process(clk, state, sw)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_P1_PLAY or state = ST_P1_MOVE_INVALID or state = ST_P1_MOVE_VALID or state = ST_UPDATE_P1_BOARD) then
+			if (state = ST_P1_PLAY or state = ST_P1_MOVE_INVALID or state = ST_P1_MOVE_VALID) then
 				sw_led(6 downto 0) <= sw(6 downto 0);
 			else
 				sw_led(6 downto 0) <= (others => '0');
@@ -339,70 +339,72 @@ begin
 	updateNextValidRows : process(clk, state, p2_play_col, p1_play_col)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_INITIALIZATION or state = ST_IDLE) then
+			if (state = ST_INITIALIZATION) then
 				next_valid_rows(6 downto 0) <= (others => (others => '0'));
+			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P1) then
+				case p1_play_col(2 downto 0) is
+					when "110" => -- col 6
+						if (next_valid_rows(6) < 6) then
+							next_valid_rows(6) <= next_valid_rows(6) + 1;
+						end if;
+					when "101" => -- col 5
+						if (next_valid_rows(5) < 6) then
+							next_valid_rows(5) <= next_valid_rows(5) + 1;
+						end if;
+					when "100" => -- col 4
+						if (next_valid_rows(4) < 6) then
+							next_valid_rows(4) <= next_valid_rows(4) + 1;
+						end if;
+					when "011" => -- col 3
+						if (next_valid_rows(3) < 6) then
+							next_valid_rows(3) <= next_valid_rows(3) + 1;
+						end if;
+					when "010" => -- col 2
+						if (next_valid_rows(2) < 6) then
+							next_valid_rows(2) <= next_valid_rows(2) + 1;
+						end if;
+					when "001" => -- col 1
+						if (next_valid_rows(1) < 6) then
+							next_valid_rows(1) <= next_valid_rows(1) + 1;
+						end if;
+					when "000" => -- col 0
+						if (next_valid_rows(0) < 6) then
+							next_valid_rows(0) <= next_valid_rows(0) + 1;
+						end if;
+					when others => -- do nothing
+				end case;
 			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P2) then
 				-- player 2 just went, record player 2 col played
 				case p2_play_col(2 downto 0) is
 					when "110" => -- col 6
 						if (next_valid_rows(6) < 6) then
-							next_valid_rows(6) <= next_valid_rows(6) + '1';
+							next_valid_rows(6) <= next_valid_rows(6) + 1;
 						end if;
 					when "101" => -- col 5
 						if (next_valid_rows(5) < 6) then
-							next_valid_rows(5) <= next_valid_rows(5) + '1';
+							next_valid_rows(5) <= next_valid_rows(5) + 1;
 						end if;
 					when "100" => -- col 4
 						if (next_valid_rows(4) < 6) then
-							next_valid_rows(4) <= next_valid_rows(4) + '1';
+							next_valid_rows(4) <= next_valid_rows(4) + 1;
 						end if;
 					when "011" => -- col 3
 						if (next_valid_rows(3) < 6) then
-							next_valid_rows(3) <= next_valid_rows(3) + '1';
+							next_valid_rows(3) <= next_valid_rows(3) + 1;
 						end if;
 					when "010" => -- col 2
 						if (next_valid_rows(2) < 6) then
-							next_valid_rows(2) <= next_valid_rows(2) + '1';
+							next_valid_rows(2) <= next_valid_rows(2) + 1;
 						end if;
 					when "001" => -- col 1
 						if (next_valid_rows(1) < 6) then
-							next_valid_rows(1) <= next_valid_rows(1) + '1';
+							next_valid_rows(1) <= next_valid_rows(1) + 1;
 						end if;
-					when others => -- col 0
+					when "000" => -- col 0
 						if (next_valid_rows(0) < 6) then
-							next_valid_rows(0) <= next_valid_rows(0) + '1';
+							next_valid_rows(0) <= next_valid_rows(0) + 1;
 						end if;
-				end case;
-			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P1) then
-				case p1_play_col(2 downto 0) is
-					when "110" => -- col 6
-						if (next_valid_rows(6) < 6) then
-							next_valid_rows(6) <= next_valid_rows(6) + '1';
-						end if;
-					when "101" => -- col 5
-						if (next_valid_rows(5) < 6) then
-							next_valid_rows(5) <= next_valid_rows(5) + '1';
-						end if;
-					when "100" => -- col 4
-						if (next_valid_rows(4) < 6) then
-							next_valid_rows(4) <= next_valid_rows(4) + '1';
-						end if;
-					when "011" => -- col 3
-						if (next_valid_rows(3) < 6) then
-							next_valid_rows(3) <= next_valid_rows(3) + '1';
-						end if;
-					when "010" => -- col 2
-						if (next_valid_rows(2) < 6) then
-							next_valid_rows(2) <= next_valid_rows(2) + '1';
-						end if;
-					when "001" => -- col 1
-						if (next_valid_rows(1) < 6) then
-							next_valid_rows(1) <= next_valid_rows(1) + '1';
-						end if;
-					when others => -- col 0
-						if (next_valid_rows(0) < 6) then
-							next_valid_rows(0) <= next_valid_rows(0) + '1';
-						end if;
+					when others => -- do nothing
 				end case;
 			end if;
 		end if;
@@ -430,7 +432,7 @@ begin
 		end if;
 	end process updateP1TurnLed;
 	
-	updateP1Board : process(clk, state, p1_play_col)
+	updateP1Board : process(clk, state, next_valid_rows, p1_play_col)
 	begin
 		if (rising_edge(clk)) then
 			if (state = ST_INITIALIZATION) then
@@ -449,8 +451,9 @@ begin
 								p1_board(2)(6) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(6) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(6) <= '1';
+							when others => -- do nothing
 						end case;
 					when "101" => -- col 5
 						case next_valid_rows(5)(2 downto 0) is
@@ -464,8 +467,9 @@ begin
 								p1_board(2)(5) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(5) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(5) <= '1';
+							when others => -- do nothing
 						end case;
 					when "100" => -- col 4
 						case next_valid_rows(4)(2 downto 0) is
@@ -479,8 +483,9 @@ begin
 								p1_board(2)(4) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(4) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(4) <= '1';
+							when others => -- do nothing
 						end case;
 					when "011" => -- col 3
 						case next_valid_rows(3)(2 downto 0) is
@@ -494,8 +499,9 @@ begin
 								p1_board(2)(3) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(3) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(3) <= '1';
+							when others => -- do nothing
 						end case;
 					when "010" => -- col 2
 						case next_valid_rows(2)(2 downto 0) is
@@ -509,8 +515,9 @@ begin
 								p1_board(2)(2) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(2) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(2) <= '1';
+							when others => -- do nothing
 						end case;
 					when "001" => -- col 1
 						case next_valid_rows(1)(2 downto 0) is
@@ -524,10 +531,11 @@ begin
 								p1_board(2)(1) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(1) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(1) <= '1';
+							when others => -- do nothing
 						end case;
-					when others => -- col 0
+					when "000" => -- col 0
 						case next_valid_rows(0)(2 downto 0) is
 							when "101" => -- row 5
 								p1_board(5)(0) <= '1';
@@ -539,9 +547,11 @@ begin
 								p1_board(2)(0) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(0) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(0) <= '1';
+							when others => -- do nothing
 						end case;
+					when others => -- do nothing
 				end case;
 			end if;
 		end if;
@@ -566,8 +576,9 @@ begin
 								p2_board(2)(6) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(6) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(6) <= '1';
+							when others => -- do nothing
 						end case;
 					when "101" => -- col 5
 						case next_valid_rows(5)(2 downto 0) is
@@ -581,8 +592,9 @@ begin
 								p2_board(2)(5) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(5) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(5) <= '1';
+							when others => -- do nothing
 						end case;
 					when "100" => -- col 4
 						case next_valid_rows(4)(2 downto 0) is
@@ -596,8 +608,9 @@ begin
 								p2_board(2)(4) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(4) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(4) <= '1';
+							when others => -- do nothing
 						end case;
 					when "011" => -- col 3
 						case next_valid_rows(3)(2 downto 0) is
@@ -611,8 +624,9 @@ begin
 								p2_board(2)(3) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(3) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(3) <= '1';
+							when others => -- do nothing
 						end case;
 					when "010" => -- col 2
 						case next_valid_rows(2)(2 downto 0) is
@@ -626,8 +640,9 @@ begin
 								p2_board(2)(2) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(2) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(2) <= '1';
+							when others => -- do nothing
 						end case;
 					when "001" => -- col 1
 						case next_valid_rows(1)(2 downto 0) is
@@ -641,10 +656,11 @@ begin
 								p2_board(2)(1) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(1) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(1) <= '1';
+							when others => -- do nothing
 						end case;
-					when others => -- col 0
+					when "000" => -- col 0
 						case next_valid_rows(0)(2 downto 0) is
 							when "101" => -- row 5
 								p2_board(5)(0) <= '1';
@@ -656,9 +672,11 @@ begin
 								p2_board(2)(0) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(0) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(0) <= '1';
-					end case;
+							when others => -- do nothing
+						end case;
+					when others => -- do nothing
 				end case;
 			end if;
 		end if;
@@ -667,7 +685,7 @@ begin
 	updateMasterBoard : process(clk, state, p1_turn, p2_turn)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_IDLE or state = ST_INITIALIZATION or state = ST_GAME_RESET) then
+			if (state = ST_INITIALIZATION) then
 				master_board <= (others => (others => '0'));
 			elsif (state = ST_UPDATE_MASTER_BOARD) then
 				-- update all game boards with token just played
