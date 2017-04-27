@@ -78,6 +78,7 @@ architecture Behavioral of MainGame is
 		ST_UPDATE_NEXT_VALID_ROWS_P1,
 		ST_UPDATE_NEXT_VALID_ROWS_P2,
 		ST_CALCULATION,
+		ST_CHECK_FOR_WINNER,
 		ST_GAME_RESET,
 		ST_GAME_TIE,
 		ST_P1_WINS,
@@ -879,22 +880,237 @@ begin
 		end if;
 	end process updateMasterBoard;
 	
-	calculateWinner : process(clk, state, master_board)
+	updateP1Wins : process(clk, state, master_board, p1_board)
 	begin
 		if (rising_edge(clk)) then
 			if (state = ST_INITIALIZATION) then
 				p1_wins <= '0';
-				p2_wins <= '0';
-			else
-				-- ** currently, player with tokens in positions A0-D0 wins **
+			elsif (state = ST_CALCULATION) then
+				-- check for all rows
+				-- row 0
 				if (p1_board(0)(3 downto 0) = WIN_R) then
 					p1_wins <= '1';
-				elsif (p2_board(0)(3 downto 0) = WIN_R) then
+				elsif (p1_board(0)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(0)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(0)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 1
+				elsif (p1_board(1)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(1)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(1)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(1)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 2
+				elsif (p1_board(2)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(2)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(2)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(2)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 3
+				elsif (p1_board(3)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(3)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(3)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(3)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 4
+				elsif (p1_board(4)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(4)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(4)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(4)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 5
+				elsif (p1_board(5)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(5)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(5)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(5)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- check for all columns
+				-- col 0
+				elsif (p1_board(0)(0) = '1' and p1_board(1)(0) = '1' and p1_board(2)(0) = '1' and p1_board(3)(0) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(0) = '1' and p1_board(2)(0) = '1' and p1_board(3)(0) = '1' and p1_board(4)(0) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(0) = '1' and p1_board(3)(0) = '1' and p1_board(4)(0) = '1' and p1_board(5)(0) = '1') then
+					p1_wins <= '1';
+				-- col 1
+				elsif (p1_board(0)(1) = '1' and p1_board(1)(1) = '1' and p1_board(2)(1) = '1' and p1_board(3)(1) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(1) = '1' and p1_board(2)(1) = '1' and p1_board(3)(1) = '1' and p1_board(4)(1) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(1) = '1' and p1_board(3)(1) = '1' and p1_board(4)(1) = '1' and p1_board(5)(1) = '1') then
+					p1_wins <= '1';
+				-- col 2
+				elsif (p1_board(0)(2) = '1' and p1_board(1)(2) = '1' and p1_board(2)(2) = '1' and p1_board(3)(2) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(2) = '1' and p1_board(2)(2) = '1' and p1_board(3)(2) = '1' and p1_board(4)(2) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(2) = '1' and p1_board(3)(2) = '1' and p1_board(4)(2) = '1' and p1_board(5)(2) = '1') then
+					p1_wins <= '1';
+				-- col 3
+				elsif (p1_board(0)(3) = '1' and p1_board(1)(3) = '1' and p1_board(2)(3) = '1' and p1_board(3)(3) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(3) = '1' and p1_board(2)(3) = '1' and p1_board(3)(3) = '1' and p1_board(4)(3) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(3) = '1' and p1_board(3)(3) = '1' and p1_board(4)(3) = '1' and p1_board(5)(3) = '1') then
+					p1_wins <= '1';
+				-- col 4
+				elsif (p1_board(0)(4) = '1' and p1_board(1)(4) = '1' and p1_board(2)(4) = '1' and p1_board(3)(4) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(4) = '1' and p1_board(2)(4) = '1' and p1_board(3)(4) = '1' and p1_board(4)(4) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(4) = '1' and p1_board(3)(4) = '1' and p1_board(4)(4) = '1' and p1_board(5)(4) = '1') then
+					p1_wins <= '1';
+				-- col 5
+				elsif (p1_board(0)(5) = '1' and p1_board(1)(5) = '1' and p1_board(2)(5) = '1' and p1_board(3)(5) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(5) = '1' and p1_board(2)(5) = '1' and p1_board(3)(5) = '1' and p1_board(4)(5) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(5) = '1' and p1_board(3)(5) = '1' and p1_board(4)(5) = '1' and p1_board(5)(5) = '1') then
+					p1_wins <= '1';
+				-- col 6
+				elsif (p1_board(0)(6) = '1' and p1_board(1)(6) = '1' and p1_board(2)(6) = '1' and p1_board(3)(6) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(6) = '1' and p1_board(2)(6) = '1' and p1_board(3)(6) = '1' and p1_board(4)(6) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(6) = '1' and p1_board(3)(6) = '1' and p1_board(4)(6) = '1' and p1_board(5)(6) = '1') then
+					p1_wins <= '1';
+				end if;
+			end if;
+		end if;
+	end process updateP1Wins;
+	
+	updateP2Wins : process(clk, state, master_board, p2_board)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_INITIALIZATION) then
+				p2_wins <= '0';
+			elsif (state = ST_CALCULATION) then
+				-- check for all rows
+				-- row 0
+				if (p2_board(0)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(0)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(0)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(0)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 1
+				elsif (p2_board(1)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(1)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(1)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(1)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 2
+				elsif (p2_board(2)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(2)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(2)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(2)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 3
+				elsif (p2_board(3)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(3)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(3)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(3)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 4
+				elsif (p2_board(4)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(4)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(4)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(4)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 5
+				elsif (p2_board(5)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(5)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(5)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(5)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- check for all columns
+				-- col 0
+				elsif (p2_board(0)(0) = '1' and p2_board(1)(0) = '1' and p2_board(2)(0) = '1' and p2_board(3)(0) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(0) = '1' and p2_board(2)(0) = '1' and p2_board(3)(0) = '1' and p2_board(4)(0) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(0) = '1' and p2_board(3)(0) = '1' and p2_board(4)(0) = '1' and p2_board(5)(0) = '1') then
+					p2_wins <= '1';
+				-- col 1
+				elsif (p2_board(0)(1) = '1' and p2_board(1)(1) = '1' and p2_board(2)(1) = '1' and p2_board(3)(1) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(1) = '1' and p2_board(2)(1) = '1' and p2_board(3)(1) = '1' and p2_board(4)(1) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(1) = '1' and p2_board(3)(1) = '1' and p2_board(4)(1) = '1' and p2_board(5)(1) = '1') then
+					p2_wins <= '1';
+				-- col 2
+				elsif (p2_board(0)(2) = '1' and p2_board(1)(2) = '1' and p2_board(2)(2) = '1' and p2_board(3)(2) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(2) = '1' and p2_board(2)(2) = '1' and p2_board(3)(2) = '1' and p2_board(4)(2) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(2) = '1' and p2_board(3)(2) = '1' and p2_board(4)(2) = '1' and p2_board(5)(2) = '1') then
+					p2_wins <= '1';
+				-- col 3
+				elsif (p2_board(0)(3) = '1' and p2_board(1)(3) = '1' and p2_board(2)(3) = '1' and p2_board(3)(3) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(3) = '1' and p2_board(2)(3) = '1' and p2_board(3)(3) = '1' and p2_board(4)(3) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(3) = '1' and p2_board(3)(3) = '1' and p2_board(4)(3) = '1' and p2_board(5)(3) = '1') then
+					p2_wins <= '1';
+				-- col 4
+				elsif (p2_board(0)(4) = '1' and p2_board(1)(4) = '1' and p2_board(2)(4) = '1' and p2_board(3)(4) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(4) = '1' and p2_board(2)(4) = '1' and p2_board(3)(4) = '1' and p2_board(4)(4) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(4) = '1' and p2_board(3)(4) = '1' and p2_board(4)(4) = '1' and p2_board(5)(4) = '1') then
+					p2_wins <= '1';
+				-- col 5
+				elsif (p2_board(0)(5) = '1' and p2_board(1)(5) = '1' and p2_board(2)(5) = '1' and p2_board(3)(5) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(5) = '1' and p2_board(2)(5) = '1' and p2_board(3)(5) = '1' and p2_board(4)(5) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(5) = '1' and p2_board(3)(5) = '1' and p2_board(4)(5) = '1' and p2_board(5)(5) = '1') then
+					p2_wins <= '1';
+				-- col 6
+				elsif (p2_board(0)(6) = '1' and p2_board(1)(6) = '1' and p2_board(2)(6) = '1' and p2_board(3)(6) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(6) = '1' and p2_board(2)(6) = '1' and p2_board(3)(6) = '1' and p2_board(4)(6) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(6) = '1' and p2_board(3)(6) = '1' and p2_board(4)(6) = '1' and p2_board(5)(6) = '1') then
 					p2_wins <= '1';
 				end if;
 			end if;
 		end if;
-	end process calculateWinner;
+	end process updateP2Wins;
 	
 	updateP1Turn : process(clk, state)
 	begin
@@ -966,6 +1182,8 @@ begin
 					when ST_UPDATE_MASTER_BOARD =>
 						state <= ST_CALCULATION;
 					when ST_CALCULATION =>
+						state <= ST_CHECK_FOR_WINNER;
+					when ST_CHECK_FOR_WINNER =>
 						if (p1_wins = '1') then
 							state <= ST_P1_WINS;
 						elsif (p2_wins = '1') then
