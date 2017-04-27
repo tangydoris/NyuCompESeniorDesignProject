@@ -24,6 +24,7 @@ entity MainGame is
 		-- user input mapping signals
 		-- switches for game board column selection
 		sw : in std_logic_vector(6 downto 0);
+		sw_led : out std_logic_vector(6 downto 0);
 		-- play column
 		submit_play : in std_logic;
 		
@@ -77,7 +78,10 @@ architecture Behavioral of MainGame is
 		ST_UPDATE_NEXT_VALID_ROWS_P1,
 		ST_UPDATE_NEXT_VALID_ROWS_P2,
 		ST_CALCULATION,
-		ST_GAME_OVER);
+		ST_GAME_RESET,
+		ST_GAME_TIE,
+		ST_P1_WINS,
+		ST_P2_WINS);
 		
 	signal state : GameState := ST_IDLE;
 	
@@ -192,7 +196,40 @@ begin
 					when "001" => sseg_ca <= "0000111"; -- t
 					when others => sseg_ca <= "0011001"; -- 4
 				end case;
-			elsif (state = ST_GAME_OVER) then
+			elsif (state = ST_GAME_TIE) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "1001111"; -- I
+					when "110" => sseg_ca <= "0000111"; -- t
+					when "101" => sseg_ca <= "0010010"; -- S
+					when "100" => sseg_ca <= "0001000"; -- A
+					when "011" => sseg_ca <= "1111111"; -- 
+					when "010" => sseg_ca <= "0000111"; -- t
+					when "001" => sseg_ca <= "1001111"; -- I
+					when others => sseg_ca <= "0000110"; -- E
+				end case;
+			elsif (state = ST_P1_WINS) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "0001100"; -- P
+					when "110" => sseg_ca <= "0100100"; -- 2
+					when "101" => sseg_ca <= "1111111"; --
+					when "100" => sseg_ca <= "1000111"; -- L
+					when "011" => sseg_ca <= "1000000"; -- 0
+					when "010" => sseg_ca <= "0010010"; -- S
+					when "001" => sseg_ca <= "0000111"; -- t
+					when others => sseg_ca <= "1111111"; --
+				end case;
+			elsif (state = ST_P2_WINS) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "0001100"; -- P
+					when "110" => sseg_ca <= "1001111"; -- 1
+					when "101" => sseg_ca <= "1111111"; --
+					when "100" => sseg_ca <= "1000111"; -- L
+					when "011" => sseg_ca <= "1000000"; -- 0
+					when "010" => sseg_ca <= "0010010"; -- S
+					when "001" => sseg_ca <= "0000111"; -- t
+					when others => sseg_ca <= "1111111"; --
+				end case;
+			elsif (state = ST_GAME_RESET) then
 				case annodeNum(2 downto 0) is
 					when "111" => sseg_ca <= "0111111"; -- -
 					when "110" => sseg_ca <= "1001110"; -- r
@@ -286,11 +323,24 @@ begin
 		end if;
 	end process updateCathodes;
 	
+	updateSwLeds : process(clk, state, sw)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P1_PLAY or state = ST_P1_MOVE_INVALID or state = ST_P1_MOVE_VALID or state = ST_UPDATE_P1_BOARD) then
+				sw_led(6 downto 0) <= sw(6 downto 0);
+			else
+				sw_led(6 downto 0) <= (others => '0');
+			end if;
+		end if;
+	end process updateSwLeds;
+	
 	-- update max-row vector
 	updateNextValidRows : process(clk, state, p2_play_col, p1_play_col)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_UPDATE_NEXT_VALID_ROWS_P2) then
+			if (state = ST_INITIALIZATION) then
+				next_valid_rows(6 downto 0) <= (others => (others => '0'));
+			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P2) then
 				-- player 2 just went, record player 2 col played
 				case p2_play_col(2 downto 0) is
 					when "110" => -- col 6
@@ -616,7 +666,7 @@ begin
 	updateMasterBoard : process(clk, state, p1_turn, p2_turn)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_INITIALIZATION) then
+			if (state = ST_IDLE or state = ST_INITIALIZATION or state = ST_GAME_RESET) then
 				master_board <= (others => (others => '0'));
 			elsif (state = ST_UPDATE_MASTER_BOARD) then
 				-- update all game boards with token just played
@@ -842,11 +892,37 @@ begin
 		end if;
 	end process calculateWinner;
 	
+	updateP1Turn : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P1_MOVE_VALID) then
+				p1_turn <= '0';
+			elsif (state = ST_P2_PLAY) then
+				if (p2_played = '1') then
+					p1_turn <= '1';
+				end if;
+			elsif (state = ST_INITIALIZATION) then
+				p1_turn <= '1';
+			end if;
+		end if;
+	end process updateP1Turn;
+	
+	updateP2Turn : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P2_PLAY) then
+				p2_turn <= '1';
+			else
+				p2_turn <= '0';
+			end if;
+		end if;
+	end process updateP2Turn;
+	
 	updateState : process(clk, state, game_start, submit_play, p1_turn,  p1_wins, game_reset, p2_played, p2_wins)
 	begin
 		if (rising_edge(clk)) then
 			if (game_reset = '1' or p1_wins = '1' or p2_wins = '1') then
-				state <= ST_GAME_OVER;
+				state <= ST_GAME_RESET;
 			else
 				case state is
 					when ST_IDLE =>
@@ -886,45 +962,37 @@ begin
 					when ST_UPDATE_MASTER_BOARD =>
 						state <= ST_CALCULATION;
 					when ST_CALCULATION =>
-						if (p1_turn = '1') then
-							state <= ST_P1_PLAY;
+						if (p1_wins = '1') then
+							state <= ST_P1_WINS;
+						elsif (p2_wins = '1') then
+							state <= ST_P2_WINS;
 						else
-							state <= ST_P2_PLAY;
+							if (p1_turn = '1') then
+								state <= ST_P1_PLAY;
+							else
+								state <= ST_P2_PLAY;
+							end if;
 						end if;
-					when ST_GAME_OVER =>
-						state <= ST_IDLE;
+					when ST_GAME_RESET =>
+						state <= ST_INITIALIZATION;
+					when ST_GAME_TIE =>
+						if (game_start = '1') then
+							state <= ST_INITIALIZATION;
+						end if;
+					when ST_P1_WINS =>
+						if (game_start = '1') then
+							state <= ST_INITIALIZATION;
+						end if;
+					when ST_P2_WINS =>
+						if (game_start = '1') then
+							state <= ST_INITIALIZATION;
+						end if;
 					when others =>
 						state <= ST_IDLE;
 				end case;
 			end if;
 		end if;
 	end process updateState;
-	
-	updateP1Turn : process(clk, state)
-	begin
-		if (rising_edge(clk)) then
-			if (state = ST_P1_MOVE_VALID) then
-				p1_turn <= '0';
-			elsif (state = ST_P2_PLAY) then
-				if (p2_played = '1') then
-					p1_turn <= '1';
-				end if;
-			elsif (state = ST_INITIALIZATION) then
-				p1_turn <= '1';
-			end if;
-		end if;
-	end process updateP1Turn;
-	
-	updateP2Turn : process(clk, state)
-	begin
-		if (rising_edge(clk)) then
-			if (state = ST_P2_PLAY) then
-				p2_turn <= '1';
-			else
-				p2_turn <= '0';
-			end if;
-		end if;
-	end process updateP2Turn;
 	
 end Behavioral;
 
