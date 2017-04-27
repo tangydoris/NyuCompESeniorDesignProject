@@ -338,7 +338,7 @@ begin
 	updateNextValidRows : process(clk, state, p2_play_col, p1_play_col)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_INITIALIZATION) then
+			if (state = ST_INITIALIZATION or state = ST_IDLE) then
 				next_valid_rows(6 downto 0) <= (others => (others => '0'));
 			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P2) then
 				-- player 2 just went, record player 2 col played
@@ -882,13 +882,17 @@ begin
 	calculateWinner : process(clk, state, master_board)
 	begin
 		if (rising_edge(clk)) then
-			-- ** INSERT BOARD CALCULATIONS (but not here) **
-				-- ** currently, player with 4 tokens in positions A0-D0 wins **
---				if (p1_board(0)(3 downto 0) = WIN_R) then
---					p1_wins <= '1';
---				elsif (p2_board(0)(3 downto 0) = WIN_R) then
---					p2_wins <= '1';
---				end if;
+			if (state = ST_INITIALIZATION) then
+				p1_wins <= '0';
+				p2_wins <= '0';
+			else
+				-- ** currently, player with tokens in positions A0-D0 wins **
+				if (p1_board(0)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p2_board(0)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				end if;
+			end if;
 		end if;
 	end process calculateWinner;
 	
@@ -921,7 +925,7 @@ begin
 	updateState : process(clk, state, game_start, submit_play, p1_turn,  p1_wins, game_reset, p2_played, p2_wins)
 	begin
 		if (rising_edge(clk)) then
-			if (game_reset = '1' or p1_wins = '1' or p2_wins = '1') then
+			if (game_reset = '1') then
 				state <= ST_GAME_RESET;
 			else
 				case state is
