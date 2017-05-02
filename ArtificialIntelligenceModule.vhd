@@ -34,6 +34,28 @@ entity ArtificialIntelligenceModule is
 end ArtificialIntelligenceModule;
 
 architecture Behavioral of ArtificialIntelligenceModule is
+
+signal calculateEnable;
+
+COMPONENT adjacencyChecker
+  PORT(
+	-- system clock (?)
+		clk : in std_logic;
+		
+		-- game boards
+		master_board : in GAME_BOARD;
+		input_board : in GAME_BOARD;
+		
+		-- enable signal
+		enable : in std_logic;
+		
+		--column play suggestion
+		play_col : out std_logic_vector(2 downto 0);
+		-- validity signal
+		valid : out std_logic
+      );
+end component;
+
 	signal move_calculated : std_logic := '0';
 	
 	type AI_STATE is (
@@ -43,6 +65,16 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	);
 	signal state : AI_STATE := ST_IDLE;
 begin
+
+	opponentAdjacencyCheck : adjacencyChecker
+	port map(
+	clk => clk,
+	master_board => master_board,
+	input_board => p1_board,
+	calculateEnable => turn
+	);
+	
+	
 	updatePlayedCol : process(clk, state)
 	begin
 		if (rising_edge(clk)) then
@@ -51,18 +83,6 @@ begin
 				if (master_board(5)(0) = '0') then
 					play_col <= "000";
 				else
-					if (master_board(5)(1) = '1') then
-						play_col <= "010";
-					elsif (master_board(5)(2) = '1') then
-						play_col <= "011";
-					elsif (master_board(5)(3) = '1') then
-						play_col <= "100";
-					elsif (master_board(5)(4) = '1') then
-						play_col <= "101";
-					elsif (master_board(5)(5) = '1') then
-						play_col <= "110";
-					elsif (master_board(5)(6) = '1') then
-						play_col <= "111";
 					end if;
 				end if;
 				-- update handshake
@@ -88,6 +108,10 @@ begin
 			end case;
 		end if;
 	end process updateState;
+	
+	enableSig : process(clk, turn)
+	begin
+		if 
 	
 	-- asynchronously update the played handshake signal
 	with move_calculated select played <=
