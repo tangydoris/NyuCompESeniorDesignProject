@@ -24,6 +24,7 @@ entity MainGame is
 		-- user input mapping signals
 		-- switches for game board column selection
 		sw : in std_logic_vector(6 downto 0);
+		sw_led : out std_logic_vector(6 downto 0);
 		-- play column
 		submit_play : in std_logic;
 		
@@ -63,6 +64,8 @@ architecture Behavioral of MainGame is
 	signal p2_played : std_logic := '0';
 	signal p2_wins : std_logic := '0';
 	
+	signal turns_played : std_logic_vector(7 downto 0) := (others => '0');
+	
 	-- state machine
 	type GameState is (
 		ST_IDLE,
@@ -77,7 +80,12 @@ architecture Behavioral of MainGame is
 		ST_UPDATE_NEXT_VALID_ROWS_P1,
 		ST_UPDATE_NEXT_VALID_ROWS_P2,
 		ST_CALCULATION,
-		ST_GAME_OVER);
+		ST_CHECK_FOR_WINNER,
+		ST_CHECK_FOR_TIE,
+		ST_GAME_RESET,
+		ST_GAME_TIE,
+		ST_P1_WINS,
+		ST_P2_WINS);
 		
 	signal state : GameState := ST_IDLE;
 	
@@ -114,6 +122,7 @@ begin
 		master_board => master_board,
 		p1_board => p1_board,
 		own_board => p2_board,
+		next_valid_rows => next_valid_rows,
 		turn => p2_turn,
 		play_col => p2_play_col,
 		played => p2_played
@@ -192,7 +201,40 @@ begin
 					when "001" => sseg_ca <= "0000111"; -- t
 					when others => sseg_ca <= "0011001"; -- 4
 				end case;
-			elsif (state = ST_GAME_OVER) then
+			elsif (state = ST_GAME_TIE) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "1001111"; -- I
+					when "110" => sseg_ca <= "0000111"; -- t
+					when "101" => sseg_ca <= "0010010"; -- S
+					when "100" => sseg_ca <= "0001000"; -- A
+					when "011" => sseg_ca <= "1111111"; -- 
+					when "010" => sseg_ca <= "0000111"; -- t
+					when "001" => sseg_ca <= "1001111"; -- I
+					when others => sseg_ca <= "0000110"; -- E
+				end case;
+			elsif (state = ST_P1_WINS) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "0001100"; -- P
+					when "110" => sseg_ca <= "0100100"; -- 2
+					when "101" => sseg_ca <= "1111111"; --
+					when "100" => sseg_ca <= "1000111"; -- L
+					when "011" => sseg_ca <= "1000000"; -- 0
+					when "010" => sseg_ca <= "0010010"; -- S
+					when "001" => sseg_ca <= "0000111"; -- t
+					when others => sseg_ca <= "1111111"; --
+				end case;
+			elsif (state = ST_P2_WINS) then
+				case annodeNum(2 downto 0) is
+					when "111" => sseg_ca <= "0001100"; -- P
+					when "110" => sseg_ca <= "1001111"; -- 1
+					when "101" => sseg_ca <= "1111111"; --
+					when "100" => sseg_ca <= "1000111"; -- L
+					when "011" => sseg_ca <= "1000000"; -- 0
+					when "010" => sseg_ca <= "0010010"; -- S
+					when "001" => sseg_ca <= "0000111"; -- t
+					when others => sseg_ca <= "1111111"; --
+				end case;
+			elsif (state = ST_GAME_RESET) then
 				case annodeNum(2 downto 0) is
 					when "111" => sseg_ca <= "0111111"; -- -
 					when "110" => sseg_ca <= "1001110"; -- r
@@ -286,72 +328,87 @@ begin
 		end if;
 	end process updateCathodes;
 	
+	updateSwLeds : process(clk, state, sw)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P1_PLAY or state = ST_P1_MOVE_INVALID or state = ST_P1_MOVE_VALID) then
+				sw_led(6 downto 0) <= sw(6 downto 0);
+			else
+				sw_led(6 downto 0) <= (others => '0');
+			end if;
+		end if;
+	end process updateSwLeds;
+	
 	-- update max-row vector
 	updateNextValidRows : process(clk, state, p2_play_col, p1_play_col)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_UPDATE_NEXT_VALID_ROWS_P2) then
-				-- player 2 just went, record player 2 col played
-				case p2_play_col(2 downto 0) is
-					when "110" => -- col 6
-						if (next_valid_rows(6) < 6) then
-							next_valid_rows(6) <= next_valid_rows(6) + '1';
-						end if;
-					when "101" => -- col 5
-						if (next_valid_rows(5) < 6) then
-							next_valid_rows(5) <= next_valid_rows(5) + '1';
-						end if;
-					when "100" => -- col 4
-						if (next_valid_rows(4) < 6) then
-							next_valid_rows(4) <= next_valid_rows(4) + '1';
-						end if;
-					when "011" => -- col 3
-						if (next_valid_rows(3) < 6) then
-							next_valid_rows(3) <= next_valid_rows(3) + '1';
-						end if;
-					when "010" => -- col 2
-						if (next_valid_rows(2) < 6) then
-							next_valid_rows(2) <= next_valid_rows(2) + '1';
-						end if;
-					when "001" => -- col 1
-						if (next_valid_rows(1) < 6) then
-							next_valid_rows(1) <= next_valid_rows(1) + '1';
-						end if;
-					when others => -- col 0
-						if (next_valid_rows(0) < 6) then
-							next_valid_rows(0) <= next_valid_rows(0) + '1';
-						end if;
-				end case;
+			if (state = ST_INITIALIZATION) then
+				next_valid_rows(6 downto 0) <= (others => (others => '0'));
 			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P1) then
 				case p1_play_col(2 downto 0) is
 					when "110" => -- col 6
 						if (next_valid_rows(6) < 6) then
-							next_valid_rows(6) <= next_valid_rows(6) + '1';
+							next_valid_rows(6) <= next_valid_rows(6) + 1;
 						end if;
 					when "101" => -- col 5
 						if (next_valid_rows(5) < 6) then
-							next_valid_rows(5) <= next_valid_rows(5) + '1';
+							next_valid_rows(5) <= next_valid_rows(5) + 1;
 						end if;
 					when "100" => -- col 4
 						if (next_valid_rows(4) < 6) then
-							next_valid_rows(4) <= next_valid_rows(4) + '1';
+							next_valid_rows(4) <= next_valid_rows(4) + 1;
 						end if;
 					when "011" => -- col 3
 						if (next_valid_rows(3) < 6) then
-							next_valid_rows(3) <= next_valid_rows(3) + '1';
+							next_valid_rows(3) <= next_valid_rows(3) + 1;
 						end if;
 					when "010" => -- col 2
 						if (next_valid_rows(2) < 6) then
-							next_valid_rows(2) <= next_valid_rows(2) + '1';
+							next_valid_rows(2) <= next_valid_rows(2) + 1;
 						end if;
 					when "001" => -- col 1
 						if (next_valid_rows(1) < 6) then
-							next_valid_rows(1) <= next_valid_rows(1) + '1';
+							next_valid_rows(1) <= next_valid_rows(1) + 1;
 						end if;
-					when others => -- col 0
+					when "000" => -- col 0
 						if (next_valid_rows(0) < 6) then
-							next_valid_rows(0) <= next_valid_rows(0) + '1';
+							next_valid_rows(0) <= next_valid_rows(0) + 1;
 						end if;
+					when others => -- do nothing
+				end case;
+			elsif (state = ST_UPDATE_NEXT_VALID_ROWS_P2) then
+				-- player 2 just went, record player 2 col played
+				case p2_play_col(2 downto 0) is
+					when "110" => -- col 6
+						if (next_valid_rows(6) < 6) then
+							next_valid_rows(6) <= next_valid_rows(6) + 1;
+						end if;
+					when "101" => -- col 5
+						if (next_valid_rows(5) < 6) then
+							next_valid_rows(5) <= next_valid_rows(5) + 1;
+						end if;
+					when "100" => -- col 4
+						if (next_valid_rows(4) < 6) then
+							next_valid_rows(4) <= next_valid_rows(4) + 1;
+						end if;
+					when "011" => -- col 3
+						if (next_valid_rows(3) < 6) then
+							next_valid_rows(3) <= next_valid_rows(3) + 1;
+						end if;
+					when "010" => -- col 2
+						if (next_valid_rows(2) < 6) then
+							next_valid_rows(2) <= next_valid_rows(2) + 1;
+						end if;
+					when "001" => -- col 1
+						if (next_valid_rows(1) < 6) then
+							next_valid_rows(1) <= next_valid_rows(1) + 1;
+						end if;
+					when "000" => -- col 0
+						if (next_valid_rows(0) < 6) then
+							next_valid_rows(0) <= next_valid_rows(0) + 1;
+						end if;
+					when others => -- do nothing
 				end case;
 			end if;
 		end if;
@@ -379,7 +436,7 @@ begin
 		end if;
 	end process updateP1TurnLed;
 	
-	updateP1Board : process(clk, state, p1_play_col)
+	updateP1Board : process(clk, state, next_valid_rows, p1_play_col)
 	begin
 		if (rising_edge(clk)) then
 			if (state = ST_INITIALIZATION) then
@@ -398,8 +455,9 @@ begin
 								p1_board(2)(6) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(6) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(6) <= '1';
+							when others => -- do nothing
 						end case;
 					when "101" => -- col 5
 						case next_valid_rows(5)(2 downto 0) is
@@ -413,8 +471,9 @@ begin
 								p1_board(2)(5) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(5) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(5) <= '1';
+							when others => -- do nothing
 						end case;
 					when "100" => -- col 4
 						case next_valid_rows(4)(2 downto 0) is
@@ -428,8 +487,9 @@ begin
 								p1_board(2)(4) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(4) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(4) <= '1';
+							when others => -- do nothing
 						end case;
 					when "011" => -- col 3
 						case next_valid_rows(3)(2 downto 0) is
@@ -443,8 +503,9 @@ begin
 								p1_board(2)(3) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(3) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(3) <= '1';
+							when others => -- do nothing
 						end case;
 					when "010" => -- col 2
 						case next_valid_rows(2)(2 downto 0) is
@@ -458,8 +519,9 @@ begin
 								p1_board(2)(2) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(2) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(2) <= '1';
+							when others => -- do nothing
 						end case;
 					when "001" => -- col 1
 						case next_valid_rows(1)(2 downto 0) is
@@ -473,10 +535,11 @@ begin
 								p1_board(2)(1) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(1) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(1) <= '1';
+							when others => -- do nothing
 						end case;
-					when others => -- col 0
+					when "000" => -- col 0
 						case next_valid_rows(0)(2 downto 0) is
 							when "101" => -- row 5
 								p1_board(5)(0) <= '1';
@@ -488,9 +551,11 @@ begin
 								p1_board(2)(0) <= '1';
 							when "001" => -- row 1
 								p1_board(1)(0) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p1_board(0)(0) <= '1';
+							when others => -- do nothing
 						end case;
+					when others => -- do nothing
 				end case;
 			end if;
 		end if;
@@ -515,8 +580,9 @@ begin
 								p2_board(2)(6) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(6) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(6) <= '1';
+							when others => -- do nothing
 						end case;
 					when "101" => -- col 5
 						case next_valid_rows(5)(2 downto 0) is
@@ -530,8 +596,9 @@ begin
 								p2_board(2)(5) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(5) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(5) <= '1';
+							when others => -- do nothing
 						end case;
 					when "100" => -- col 4
 						case next_valid_rows(4)(2 downto 0) is
@@ -545,8 +612,9 @@ begin
 								p2_board(2)(4) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(4) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(4) <= '1';
+							when others => -- do nothing
 						end case;
 					when "011" => -- col 3
 						case next_valid_rows(3)(2 downto 0) is
@@ -560,8 +628,9 @@ begin
 								p2_board(2)(3) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(3) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(3) <= '1';
+							when others => -- do nothing
 						end case;
 					when "010" => -- col 2
 						case next_valid_rows(2)(2 downto 0) is
@@ -575,8 +644,9 @@ begin
 								p2_board(2)(2) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(2) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(2) <= '1';
+							when others => -- do nothing
 						end case;
 					when "001" => -- col 1
 						case next_valid_rows(1)(2 downto 0) is
@@ -590,10 +660,11 @@ begin
 								p2_board(2)(1) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(1) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(1) <= '1';
+							when others => -- do nothing
 						end case;
-					when others => -- col 0
+					when "000" => -- col 0
 						case next_valid_rows(0)(2 downto 0) is
 							when "101" => -- row 5
 								p2_board(5)(0) <= '1';
@@ -605,9 +676,11 @@ begin
 								p2_board(2)(0) <= '1';
 							when "001" => -- row 1
 								p2_board(1)(0) <= '1';
-							when others => -- row 0
+							when "000" => -- row 0
 								p2_board(0)(0) <= '1';
-					end case;
+							when others => -- do nothing
+						end case;
+					when others => -- do nothing
 				end case;
 			end if;
 		end if;
@@ -829,24 +902,282 @@ begin
 		end if;
 	end process updateMasterBoard;
 	
-	calculateWinner : process(clk, state, master_board)
+	updateP1Wins : process(clk, state, master_board, p1_board)
 	begin
 		if (rising_edge(clk)) then
-			-- ** INSERT BOARD CALCULATIONS (but not here) **
-				-- ** currently, player with 4 tokens in positions A0-D0 wins **
---				if (p1_board(0)(3 downto 0) = WIN_R) then
---					p1_wins <= '1';
---				elsif (p2_board(0)(3 downto 0) = WIN_R) then
---					p2_wins <= '1';
---				end if;
+			if (state = ST_INITIALIZATION) then
+				p1_wins <= '0';
+			elsif (state = ST_CALCULATION) then
+				-- check for all rows
+				-- row 0
+				if (p1_board(0)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(0)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(0)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(0)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 1
+				elsif (p1_board(1)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(1)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(1)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(1)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 2
+				elsif (p1_board(2)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(2)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(2)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(2)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 3
+				elsif (p1_board(3)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(3)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(3)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(3)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 4
+				elsif (p1_board(4)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(4)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(4)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(4)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- row 5
+				elsif (p1_board(5)(3 downto 0) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(5)(4 downto 1) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(5)(5 downto 2) = WIN_R) then
+					p1_wins <= '1';
+				elsif (p1_board(5)(6 downto 3) = WIN_R) then
+					p1_wins <= '1';
+				-- check for all columns
+				-- col 0
+				elsif (p1_board(0)(0) = '1' and p1_board(1)(0) = '1' and p1_board(2)(0) = '1' and p1_board(3)(0) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(0) = '1' and p1_board(2)(0) = '1' and p1_board(3)(0) = '1' and p1_board(4)(0) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(0) = '1' and p1_board(3)(0) = '1' and p1_board(4)(0) = '1' and p1_board(5)(0) = '1') then
+					p1_wins <= '1';
+				-- col 1
+				elsif (p1_board(0)(1) = '1' and p1_board(1)(1) = '1' and p1_board(2)(1) = '1' and p1_board(3)(1) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(1) = '1' and p1_board(2)(1) = '1' and p1_board(3)(1) = '1' and p1_board(4)(1) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(1) = '1' and p1_board(3)(1) = '1' and p1_board(4)(1) = '1' and p1_board(5)(1) = '1') then
+					p1_wins <= '1';
+				-- col 2
+				elsif (p1_board(0)(2) = '1' and p1_board(1)(2) = '1' and p1_board(2)(2) = '1' and p1_board(3)(2) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(2) = '1' and p1_board(2)(2) = '1' and p1_board(3)(2) = '1' and p1_board(4)(2) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(2) = '1' and p1_board(3)(2) = '1' and p1_board(4)(2) = '1' and p1_board(5)(2) = '1') then
+					p1_wins <= '1';
+				-- col 3
+				elsif (p1_board(0)(3) = '1' and p1_board(1)(3) = '1' and p1_board(2)(3) = '1' and p1_board(3)(3) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(3) = '1' and p1_board(2)(3) = '1' and p1_board(3)(3) = '1' and p1_board(4)(3) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(3) = '1' and p1_board(3)(3) = '1' and p1_board(4)(3) = '1' and p1_board(5)(3) = '1') then
+					p1_wins <= '1';
+				-- col 4
+				elsif (p1_board(0)(4) = '1' and p1_board(1)(4) = '1' and p1_board(2)(4) = '1' and p1_board(3)(4) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(4) = '1' and p1_board(2)(4) = '1' and p1_board(3)(4) = '1' and p1_board(4)(4) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(4) = '1' and p1_board(3)(4) = '1' and p1_board(4)(4) = '1' and p1_board(5)(4) = '1') then
+					p1_wins <= '1';
+				-- col 5
+				elsif (p1_board(0)(5) = '1' and p1_board(1)(5) = '1' and p1_board(2)(5) = '1' and p1_board(3)(5) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(5) = '1' and p1_board(2)(5) = '1' and p1_board(3)(5) = '1' and p1_board(4)(5) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(5) = '1' and p1_board(3)(5) = '1' and p1_board(4)(5) = '1' and p1_board(5)(5) = '1') then
+					p1_wins <= '1';
+				-- col 6
+				elsif (p1_board(0)(6) = '1' and p1_board(1)(6) = '1' and p1_board(2)(6) = '1' and p1_board(3)(6) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(1)(6) = '1' and p1_board(2)(6) = '1' and p1_board(3)(6) = '1' and p1_board(4)(6) = '1') then
+					p1_wins <= '1';
+				elsif (p1_board(2)(6) = '1' and p1_board(3)(6) = '1' and p1_board(4)(6) = '1' and p1_board(5)(6) = '1') then
+					p1_wins <= '1';
+				end if;
+			end if;
 		end if;
-	end process calculateWinner;
+	end process updateP1Wins;
 	
-	updateState : process(clk, state, game_start, submit_play, p1_turn,  p1_wins, game_reset, p2_played, p2_wins)
+	updateP2Wins : process(clk, state, master_board, p2_board)
 	begin
 		if (rising_edge(clk)) then
-			if (game_reset = '1' or p1_wins = '1' or p2_wins = '1') then
-				state <= ST_GAME_OVER;
+			if (state = ST_INITIALIZATION) then
+				p2_wins <= '0';
+			elsif (state = ST_CALCULATION) then
+				-- check for all rows
+				-- row 0
+				if (p2_board(0)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(0)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(0)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(0)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 1
+				elsif (p2_board(1)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(1)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(1)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(1)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 2
+				elsif (p2_board(2)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(2)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(2)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(2)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 3
+				elsif (p2_board(3)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(3)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(3)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(3)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 4
+				elsif (p2_board(4)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(4)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(4)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(4)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- row 5
+				elsif (p2_board(5)(3 downto 0) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(5)(4 downto 1) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(5)(5 downto 2) = WIN_R) then
+					p2_wins <= '1';
+				elsif (p2_board(5)(6 downto 3) = WIN_R) then
+					p2_wins <= '1';
+				-- check for all columns
+				-- col 0
+				elsif (p2_board(0)(0) = '1' and p2_board(1)(0) = '1' and p2_board(2)(0) = '1' and p2_board(3)(0) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(0) = '1' and p2_board(2)(0) = '1' and p2_board(3)(0) = '1' and p2_board(4)(0) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(0) = '1' and p2_board(3)(0) = '1' and p2_board(4)(0) = '1' and p2_board(5)(0) = '1') then
+					p2_wins <= '1';
+				-- col 1
+				elsif (p2_board(0)(1) = '1' and p2_board(1)(1) = '1' and p2_board(2)(1) = '1' and p2_board(3)(1) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(1) = '1' and p2_board(2)(1) = '1' and p2_board(3)(1) = '1' and p2_board(4)(1) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(1) = '1' and p2_board(3)(1) = '1' and p2_board(4)(1) = '1' and p2_board(5)(1) = '1') then
+					p2_wins <= '1';
+				-- col 2
+				elsif (p2_board(0)(2) = '1' and p2_board(1)(2) = '1' and p2_board(2)(2) = '1' and p2_board(3)(2) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(2) = '1' and p2_board(2)(2) = '1' and p2_board(3)(2) = '1' and p2_board(4)(2) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(2) = '1' and p2_board(3)(2) = '1' and p2_board(4)(2) = '1' and p2_board(5)(2) = '1') then
+					p2_wins <= '1';
+				-- col 3
+				elsif (p2_board(0)(3) = '1' and p2_board(1)(3) = '1' and p2_board(2)(3) = '1' and p2_board(3)(3) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(3) = '1' and p2_board(2)(3) = '1' and p2_board(3)(3) = '1' and p2_board(4)(3) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(3) = '1' and p2_board(3)(3) = '1' and p2_board(4)(3) = '1' and p2_board(5)(3) = '1') then
+					p2_wins <= '1';
+				-- col 4
+				elsif (p2_board(0)(4) = '1' and p2_board(1)(4) = '1' and p2_board(2)(4) = '1' and p2_board(3)(4) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(4) = '1' and p2_board(2)(4) = '1' and p2_board(3)(4) = '1' and p2_board(4)(4) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(4) = '1' and p2_board(3)(4) = '1' and p2_board(4)(4) = '1' and p2_board(5)(4) = '1') then
+					p2_wins <= '1';
+				-- col 5
+				elsif (p2_board(0)(5) = '1' and p2_board(1)(5) = '1' and p2_board(2)(5) = '1' and p2_board(3)(5) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(5) = '1' and p2_board(2)(5) = '1' and p2_board(3)(5) = '1' and p2_board(4)(5) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(5) = '1' and p2_board(3)(5) = '1' and p2_board(4)(5) = '1' and p2_board(5)(5) = '1') then
+					p2_wins <= '1';
+				-- col 6
+				elsif (p2_board(0)(6) = '1' and p2_board(1)(6) = '1' and p2_board(2)(6) = '1' and p2_board(3)(6) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(1)(6) = '1' and p2_board(2)(6) = '1' and p2_board(3)(6) = '1' and p2_board(4)(6) = '1') then
+					p2_wins <= '1';
+				elsif (p2_board(2)(6) = '1' and p2_board(3)(6) = '1' and p2_board(4)(6) = '1' and p2_board(5)(6) = '1') then
+					p2_wins <= '1';
+				end if;
+			end if;
+		end if;
+	end process updateP2Wins;
+	
+	updateTurnsPlayed : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_INITIALIZATION) then
+				turns_played <= (others => '0');
+			elsif (state = ST_UPDATE_P1_BOARD) then
+				turns_played <= turns_played + 1;
+			elsif (state = ST_UPDATE_P2_BOARD) then
+				turns_played <= turns_played + 1;
+			end if;
+		end if;
+	end process updateTurnsPlayed;
+	
+	updateP1Turn : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P1_MOVE_VALID) then
+				p1_turn <= '0';
+			elsif (state = ST_P2_PLAY) then
+				if (p2_played = '1') then
+					p1_turn <= '1';
+				end if;
+			elsif (state = ST_INITIALIZATION) then
+				p1_turn <= '1';
+			end if;
+		end if;
+	end process updateP1Turn;
+	
+	updateP2Turn : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_P2_PLAY) then
+				p2_turn <= '1';
+			else
+				p2_turn <= '0';
+			end if;
+		end if;
+	end process updateP2Turn;
+	
+	updateState : process(clk, state, game_start, submit_play, p1_turn, p1_wins, game_reset, p2_played, p2_wins, turns_played)
+	begin
+		if (rising_edge(clk)) then
+			if (game_reset = '1') then
+				state <= ST_GAME_RESET;
 			else
 				case state is
 					when ST_IDLE =>
@@ -886,45 +1217,43 @@ begin
 					when ST_UPDATE_MASTER_BOARD =>
 						state <= ST_CALCULATION;
 					when ST_CALCULATION =>
-						if (p1_turn = '1') then
-							state <= ST_P1_PLAY;
+						state <= ST_CHECK_FOR_WINNER;
+					when ST_CHECK_FOR_WINNER =>
+						if (p1_wins = '1') then
+							state <= ST_P1_WINS;
+						elsif (p2_wins = '1') then
+							state <= ST_P2_WINS;
+						elsif (turns_played = 42) then
+							-- if the maximum number of turns is achieved without a winner,
+							-- then the game ends in a tie
+							state <= ST_GAME_TIE;
 						else
-							state <= ST_P2_PLAY;
+							if (p1_turn = '1') then
+								state <= ST_P1_PLAY;
+							else
+								state <= ST_P2_PLAY;
+							end if;
 						end if;
-					when ST_GAME_OVER =>
-						state <= ST_IDLE;
+					when ST_GAME_RESET =>
+						state <= ST_INITIALIZATION;
+					when ST_GAME_TIE =>
+						if (game_start = '1') then
+							state <= ST_INITIALIZATION;
+						end if;
+					when ST_P1_WINS =>
+						if (game_start = '1') then
+							state <= ST_INITIALIZATION;
+						end if;
+					when ST_P2_WINS =>
+						if (game_start = '1') then
+							state <= ST_INITIALIZATION;
+						end if;
 					when others =>
 						state <= ST_IDLE;
 				end case;
 			end if;
 		end if;
 	end process updateState;
-	
-	updateP1Turn : process(clk, state)
-	begin
-		if (rising_edge(clk)) then
-			if (state = ST_P1_MOVE_VALID) then
-				p1_turn <= '0';
-			elsif (state = ST_P2_PLAY) then
-				if (p2_played = '1') then
-					p1_turn <= '1';
-				end if;
-			elsif (state = ST_INITIALIZATION) then
-				p1_turn <= '1';
-			end if;
-		end if;
-	end process updateP1Turn;
-	
-	updateP2Turn : process(clk, state)
-	begin
-		if (rising_edge(clk)) then
-			if (state = ST_P2_PLAY) then
-				p2_turn <= '1';
-			else
-				p2_turn <= '0';
-			end if;
-		end if;
-	end process updateP2Turn;
 	
 end Behavioral;
 

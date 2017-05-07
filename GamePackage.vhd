@@ -11,6 +11,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 package GamePackage is
+
 	type GAME_BOARD is array(5 downto 0) of std_logic_vector(6 downto 0);
 	type VALID_ROWS is array(6 downto 0) of std_logic_vector(2 downto 0);
 	
@@ -32,6 +33,7 @@ package GamePackage is
 			master_board : in GAME_BOARD;
 			p1_board : in GAME_BOARD;
 			own_board : in GAME_BOARD;
+			next_valid_rows : in VALID_ROWS;
 			turn : in std_logic;
 			play_col : out std_logic_vector(2 downto 0);
 			played : out std_logic

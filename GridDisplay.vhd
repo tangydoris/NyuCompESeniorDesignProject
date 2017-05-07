@@ -271,15 +271,14 @@ begin
 			inBoard <= ((currRow < 6) AND (currColumn < 7) AND (currRow >= 0) AND (currColumn >= 0));
 			if( inBoard AND(redPieces(currRow)(currColumn) = '1') ) then
 				isRed <= true;
-				else
+			else
 				isRed <= false;
-				end if;
-				
-				if(inBoard AND (bluePieces(currRow)(currColumn) = '1')) then
-					isBlue <= true;
-				else
-					isBlue <= false;
-				end if;
+			end if;
+			if(inBoard AND (bluePieces(currRow)(currColumn) = '1')) then
+				isBlue <= true;
+			else
+				isBlue <= false;
+			end if;
 	end process rowColumn;
 	
 	--Determine if the current pixel should be a filled board pixel
