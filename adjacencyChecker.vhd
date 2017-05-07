@@ -44,7 +44,7 @@ architecture Behavioral of AdjacencyChecker is
 	signal doneValue : std_logic_vector(3 downto 0);
 	
 	signal verticalDone : std_logic := '0';
-	signal horizontalDone : std_logic := '1';
+	signal horizontalDone : std_logic := '0';
 	signal topRightDiagonalDone : std_logic := '1';
 	signal topLeftDiagonalDone : std_logic := '1';
 	
@@ -110,13 +110,10 @@ begin
 				when ST_WORKING =>
 					if (enable = '0') then
 						state <= ST_IDLE;
-					else if (doneValue = "11") then
-						state <= ST_DONE;
-					end if;
+					if (ready = "11") then
+						state <= ST_DONE
 				when ST_DONE =>
-					if (enable = '0') then
-						state <= ST_IDLE;
-					end if;
+					state <= ST_IDLE;
 			end case;
 		end if;
 	end process updateState;
