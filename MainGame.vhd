@@ -64,6 +64,8 @@ architecture Behavioral of MainGame is
 	signal p2_played : std_logic := '0';
 	signal p2_wins : std_logic := '0';
 	
+	signal turns_played : std_logic_vector(7 downto 0) := (others => '0');
+	
 	-- state machine
 	type GameState is (
 		ST_IDLE,
@@ -79,6 +81,7 @@ architecture Behavioral of MainGame is
 		ST_UPDATE_NEXT_VALID_ROWS_P2,
 		ST_CALCULATION,
 		ST_CHECK_FOR_WINNER,
+		ST_CHECK_FOR_TIE,
 		ST_GAME_RESET,
 		ST_GAME_TIE,
 		ST_P1_WINS,
@@ -119,6 +122,7 @@ begin
 		master_board => master_board,
 		p1_board => p1_board,
 		own_board => p2_board,
+		next_valid_rows => next_valid_rows,
 		turn => p2_turn,
 		play_col => p2_play_col,
 		played => p2_played
@@ -1130,6 +1134,19 @@ begin
 		end if;
 	end process updateP2Wins;
 	
+	updateTurnsPlayed : process(clk, state)
+	begin
+		if (rising_edge(clk)) then
+			if (state = ST_INITIALIZATION) then
+				turns_played <= (others => '0');
+			elsif (state = ST_UPDATE_P1_BOARD) then
+				turns_played <= turns_played + 1;
+			elsif (state = ST_UPDATE_P2_BOARD) then
+				turns_played <= turns_played + 1;
+			end if;
+		end if;
+	end process updateTurnsPlayed;
+	
 	updateP1Turn : process(clk, state)
 	begin
 		if (rising_edge(clk)) then
@@ -1156,7 +1173,7 @@ begin
 		end if;
 	end process updateP2Turn;
 	
-	updateState : process(clk, state, game_start, submit_play, p1_turn,  p1_wins, game_reset, p2_played, p2_wins)
+	updateState : process(clk, state, game_start, submit_play, p1_turn, p1_wins, game_reset, p2_played, p2_wins, turns_played)
 	begin
 		if (rising_edge(clk)) then
 			if (game_reset = '1') then
@@ -1206,6 +1223,10 @@ begin
 							state <= ST_P1_WINS;
 						elsif (p2_wins = '1') then
 							state <= ST_P2_WINS;
+						elsif (turns_played = 42) then
+							-- if the maximum number of turns is achieved without a winner,
+							-- then the game ends in a tie
+							state <= ST_GAME_TIE;
 						else
 							if (p1_turn = '1') then
 								state <= ST_P1_PLAY;
