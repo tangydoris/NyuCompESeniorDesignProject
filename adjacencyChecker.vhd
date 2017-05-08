@@ -30,9 +30,6 @@ entity AdjacencyChecker is
 		-- enable signal
 		enable : in std_logic;
 		
-		-- output decision
-		-- played column (0 through 7)
-		num_own_adjacencies : out std_logic_vector(1 downto 0);
 		player_can_win      : out std_logic;
 		opp_can_win         : out std_logic;
 		player_two_adjs     : out std_logic;
@@ -73,6 +70,24 @@ architecture Behavioral of AdjacencyChecker is
 	signal oppThreeAdjsVert  : std_logic;
 	signal oppThreeAdjsTopRightDiag : std_logic_vector(3 downto 0);
 	signal oppThreeAdjsTopLeftDiag  : std_logic_vector(3 downto 0);
+	
+	--13 possible combinations of 3
+	type ADJ_BASKET is array(12 downto 0) of std_logic_vector(2 downto 0);
+	
+	signal playerAdjsArray : ADJ_BASKET;
+	signal playerThreeAdjsVec : std_logic_vector(12 downto 0);
+	signal playerTwoAdjsVec   : std_logic_vector(12 downto 0);
+	signal playerOneAdjsVec   : std_logic_vector(12 downto 0);
+	
+	component oneToThreeAdjCalc 
+		port (
+		input_vec : in std_logic_vector(2 downto 0);
+		oneAdj    : out std_logic;
+		twoAdjs   : out std_logic;
+		threeAdjs : out std_logic
+		);
+	end component;
+
 begin
 
 	rowMinusThree <= row - "11";
@@ -92,7 +107,7 @@ begin
 	columnPlusThree  <= column + "11";
 
 	--opponent adjacency check
-	checkOpponent : process(clk, state)
+	checkOpponent : process(clk, state, column, oppThreeAdjsHoriz, oppThreeAdjsVert, oppThreeAdjsTopRightDiag, oppThreeAdjsTopLeftDiag)
 	begin
 		if (rising_edge(clk)) then
 			if(state = ST_WORKING) then
@@ -187,8 +202,207 @@ begin
 			end if;
 		end if;
 	end process checkOpponent;
+	
+	--Breaking the three bit board selections into nice booleans for own adjacency calculation below
+	Inst_OwnAdjEncoderCalc_0 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(0),
+			oneAdj    => playerOneAdjsVec(0),
+			twoAdjs   => playerTwoAdjsVec(0),
+			threeAdjs => playerThreeAdjsVec(0)
+			);
+			
+	Inst_OwnAdjEncoderCalc_1 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(1),
+			oneAdj    => playerOneAdjsVec(1),
+			twoAdjs   => playerTwoAdjsVec(1),
+			threeAdjs => playerThreeAdjsVec(1)
+			);
+			
+	Inst_OwnAdjEncoderCalc_2 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(2),
+			oneAdj    => playerOneAdjsVec(2),
+			twoAdjs   => playerTwoAdjsVec(2),
+			threeAdjs => playerThreeAdjsVec(2)
+			);
+	
+	Inst_OwnAdjEncoderCalc_3 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(3),
+			oneAdj    => playerOneAdjsVec(3),
+			twoAdjs   => playerTwoAdjsVec(3),
+			threeAdjs => playerThreeAdjsVec(3)
+			);
+	
+	Inst_OwnAdjEncoderCalc_4 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(4),
+			oneAdj    => playerOneAdjsVec(4),
+			twoAdjs   => playerTwoAdjsVec(4),
+			threeAdjs => playerThreeAdjsVec(4)
+			);
+			
+	Inst_OwnAdjEncoderCalc_5 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(5),
+			oneAdj    => playerOneAdjsVec(5),
+			twoAdjs   => playerTwoAdjsVec(5),
+			threeAdjs => playerThreeAdjsVec(5)
+			);
+	
+	Inst_OwnAdjEncoderCalc_6 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(6),
+			oneAdj    => playerOneAdjsVec(6),
+			twoAdjs   => playerTwoAdjsVec(6),
+			threeAdjs => playerThreeAdjsVec(6)
+			);
+	
+	Inst_OwnAdjEncoderCalc_7 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(7),
+			oneAdj    => playerOneAdjsVec(7),
+			twoAdjs   => playerTwoAdjsVec(7),
+			threeAdjs => playerThreeAdjsVec(7)
+			);
+			
+	Inst_OwnAdjEncoderCalc_8 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(8),
+			oneAdj    => playerOneAdjsVec(8),
+			twoAdjs   => playerTwoAdjsVec(8),
+			threeAdjs => playerThreeAdjsVec(8)
+			);
+			
+	Inst_OwnAdjEncoderCalc_9 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(9),
+			oneAdj    => playerOneAdjsVec(9),
+			twoAdjs   => playerTwoAdjsVec(9),
+			threeAdjs => playerThreeAdjsVec(9)
+			);
+			
+	Inst_OwnAdjEncoderCalc_10 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(10),
+			oneAdj    => playerOneAdjsVec(10),
+			twoAdjs   => playerTwoAdjsVec(10),
+			threeAdjs => playerThreeAdjsVec(10)
+			);
+			
+	Inst_OwnAdjEncoderCalc_11 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(11),
+			oneAdj    => playerOneAdjsVec(11),
+			twoAdjs   => playerTwoAdjsVec(11),
+			threeAdjs => playerThreeAdjsVec(11)
+			);
+	
+	Inst_OwnAdjEncoderCalc_12 : oneToThreeAdjCalc
+	PORT MAP(
+			input_vec => playerAdjsArray(12),
+			oneAdj    => playerOneAdjsVec(12),
+			twoAdjs   => playerTwoAdjsVec(12),
+			threeAdjs => playerThreeAdjsVec(12)
+			);
+			 
+			
 
 	--own adjacency calculation
+	checkPlayer : process(clk, state, column, playerAdjsArray)
+	begin
+		if(rising_edge(clk)) then
+			if(state = ST_CALCULATE) then
+				if(column >= "011") then
+					playerAdjsArray(0) <= own_board(row)(columnMinusThree) and own_board(row)(columnMinusTwo) and own_board(row)(columnMinusOne);
+				else
+					playerAdjsArray(0) <= '0';
+				end if;
+				
+				if(column >= "010" and column <= "101" ) then
+					playerAdjsArray(1) <= own_board(row)(columnMinusTwo) and own_board(row)(columnMinusOne) and own_board(row)(columnPlusOne);
+				else
+					playerAdjsArray(1) <= '0';
+				end if;
+				
+				if(column >=  "001" and column <= "100") then
+					playerAdjsArray(2) <= own_board(row)(columnMinusOne) and own_board(row)(columnPlusOne) and own_board(row)(columnPlusTwo);
+				else
+					playerAdjsArray(2) <= '0';
+				end if;
+				
+				if(column <= "011") then
+					playerAdjsArray(3) <= own_board(row)(columnPlusOne) and own_board(row)(columnPlusTwo) and own_board(row)(columnPlusThree);
+				else
+					playerAdjsArray(3) <= '0';
+				end if;
+				
+				--vertical checks
+				if(row >= "011") then
+					playerAdjsArray(4) <= own_board(rowMinusOne)(column) and own_board(rowMinusTwo)(column) and own_board(rowMinusThree)(column);
+				else
+					playerAdjsArray(4) <= '0';
+				end if;
+				
+				--top-right diagonal checks
+				if(row >= "011" and column >= "011") then
+					playerAdjsArray(5) <= own_board(rowMinusThree)(columnMinusThree) and own_board(rowMinusTwo)(columnMinusTwo) and own_board(rowMinusOne)(columnMinusOne);
+				else
+					playerAdjsArray(5) <= '0';
+				end if;
+				
+				if(row >= "010" and row <= "101" and column >= "010" and column <= "101") then
+					playerAdjsArray(6) <= own_board(rowMinusTwo)(columnMinusTwo) and own_board(rowMinusOne)(columnMinusOne) and own_board(rowPlusOne)(columnPlusOne);
+				else
+					playerAdjsArray(6) <= '0';
+				end if;
+				
+				if(row >= "001" and row <= "100" and column >=  "001" and column <= "100") then
+					playerAdjsArray(7) <= own_board(rowMinusOne)(columnMinusOne) and own_board(rowPlusOne)(columnPlusOne) and own_board(rowPlusTwo)(columnPlusTwo);
+				else
+					playerAdjsArray(7) <= '0';
+				end if;
+				
+				if(row <= "011" and column >= "011") then
+					playerAdjsArray(8) <= own_board(rowPlusOne)(columnMinusOne) and own_board(rowPlusTwo)(columnPlusTwo) and own_board(rowPlusThree)(columnPlusThree);
+				else
+					playerAdjsArray(8) <= '0';
+				end if;
+				
+				--top-left diagonal checks
+				if(row <= "011" and column >= "011" ) then
+					playerAdjsArray(9) <= own_board(rowMinusThree)(columnMinusThree) and own_board(rowMinusTwo)(columnMinusTwo) and own_board(rowMinusOne)(columnMinusOne);
+				else
+					playerAdjsArray(9) <= '0';
+				end if;
+				
+				if(row >= "001" and row <= "100" and column >= "010" and column <= "101" ) then
+					playerAdjsArray(10) <= own_board(rowMinusTwo)(columnMinusTwo) and own_board(rowMinusOne)(columnMinusOne) and own_board(rowPlusOne)(columnPlusOne);
+				else
+					playerAdjsArray(10) <= '0';
+				end if;
+				
+				if(row >= "010" and row <= "101" and column >=  "001" and column <= "100" ) then
+					playerAdjsArray(11) <= own_board(rowMinusOne)(columnMinusOne) and own_board(rowPlusOne)(columnPlusOne) and own_board(rowPlusTwo)(columnPlusTwo);
+				else
+					playerAdjsArray(11) <= '0';
+				end if;
+				
+				if(row >= "011" and column <= "011" ) then
+					playerAdjsArray(12) <= own_board(rowPlusOne)(columnPlusOne) and own_board(rowPlusTwo)(columnPlusTwo) and own_board(rowPlusThree)(columnPlusThree);
+				else
+					playerAdjsArray(12) <= '0';
+				end if;
+			
+			elsif(state = ST_CALCULATE) then
+				player_can_win  <= (not (playerThreeAdjsVec = "00000000000000000"));
+				player_two_adjs <= (not (playerTwoAdjsVec   = "00000000000000000"));
+				player_one_adjs <= (not (playerOneAdjsVec   = "00000000000000000"));
+			end if;
+		end if;
+	end process checkPlayer;
 	
 	
 	updateState : process(clk, state)
@@ -212,14 +426,16 @@ begin
 						state <= ST_DONE;
 					end if;
 				when ST_DONE =>
-					state <= ST_IDLE;
+					if (enable = '0') then
+						state <= ST_IDLE;
+					end if;
 			end case;
 		end if;
 	end process updateState;
 	
 	-- asynchronously update the played handshake signal
-	with state select played <=
-		'1' when '1',
+	with state select ready <=
+		'1' when ST_DONE,
 		'0' when others;
 end Behavioral;
 
