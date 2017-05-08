@@ -61,8 +61,8 @@ architecture Behavioral of AdjacencyChecker is
 	signal columnMinusOne   : std_logic_vector(2 downto 0);
 	
 	signal columnPlusOne    : std_logic_vector(2 downto 0);
-	signal columnMinusTwo   : std_logic_vector(2 downto 0);
-	signal columnMinusThree : std_logic_vector(2 downto 0);
+	signal columnPlusTwo   : std_logic_vector(2 downto 0);
+	signal columnPlusThree : std_logic_vector(2 downto 0);
 	
 	signal state: AI_STATE := ST_IDLE;
 	
@@ -112,83 +112,96 @@ begin
 		if (rising_edge(clk)) then
 			if(state = ST_WORKING) then
 				--horizontal checks
-				if(column >= "011") then
-					oppThreeAdjsHoriz(0) <= opponent_board(row)(columnMinusThree) and opponent_board(row)(columnMinusTwo) and opponent_board(row)(columnMinusOne);
+				if(column >= "011" and 
+				opponent_board(row)(columnMinusThree) and opponent_board(row)(columnMinusTwo) and opponent_board(row)(columnMinusOne)) then
+					oppThreeAdjsHoriz(0) <= '1';
 				else
 					oppThreeAdjsHoriz(0) <= '0';
 				end if;
 				
-				if(column >= "010" and column <= "101" ) then
-					oppThreeAdjsHoriz(1) <= opponent_board(row)(columnMinusTwo) and opponent_board(row)(columnMinusOne) and opponent_board(row)(columnPlusOne);
+				if(column >= "010" and column <= "101" and 
+				opponent_board(row)(columnMinusTwo) and opponent_board(row)(columnMinusOne) and opponent_board(row)(columnPlusOne)) then
+					oppThreeAdjsHoriz(1) <= '1';
 				else
 					oppThreeAdjsHoriz(1) <= '0';
 				end if;
 				
-				if(column >=  "001" and column <= "100") then
-					oppThreeAdjsHoriz(2) <= opponent_board(row)(columnMinusOne) and opponent_board(row)(columnPlusOne) and opponent_board(row)(columnPlusTwo);
+				if(column >=  "001" and column <= "100" and 
+				opponent_board(row)(columnMinusOne) and opponent_board(row)(columnPlusOne) and opponent_board(row)(columnPlusTwo)) then
+					oppThreeAdjsHoriz(2) <= '1';
 				else
 					oppThreeAdjsHoriz(2) <= '0';
 				end if;
 				
-				if(column <= "011") then
-					oppThreeAdjsHoriz(3) <= opponent_board(row)(columnPlusOne) and opponent_board(row)(columnPlusTwo) and opponent_board(row)(columnPlusThree);
+				if(column <= "011" and
+				opponent_board(row)(columnPlusOne) and opponent_board(row)(columnPlusTwo) and opponent_board(row)(columnPlusThree)) then
+					oppThreeAdjsHoriz(3) <= '1';
 				else
 					oppThreeAdjsHoriz(3) <= '0';
 				end if;
 				
 				--vertical checks
-				if(row >= "011") then
-					oppThreeAdjsVert <= opponent_board(rowMinusOne)(column) and opponent_board(rowMinusTwo)(column) and opponent_board(rowMinusThree)(column);
+				if(row >= "011" and
+				opponent_board(rowMinusOne)(column) and opponent_board(rowMinusTwo)(column) and opponent_board(rowMinusThree)(column)) then
+					oppThreeAdjsVert <= '1';
 				else
 					oppThreeAdjsVert <= '0';
 				end if;
 				
 				--top-right diagonal checks
-				if(row >= "011" and column >= "011") then
-					oppThreeAdjsTopRightDiag(0) <= opponent_board(rowMinusThree)(columnMinusThree) and opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne);
+				if(row >= "011" and column >= "011" and
+				opponent_board(rowMinusThree)(columnMinusThree) and opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne)) then
+					oppThreeAdjsTopRightDiag(0) <= '1';
 				else
 					oppThreeAdjsTopRightDiag(0) <= '0';
 				end if;
 				
-				if(row >= "010" and row <= "101" and column >= "010" and column <= "101") then
-					oppThreeAdjsTopRightDiag(1) <= opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne);
+				if(row >= "010" and row <= "101" and column >= "010" and column <= "101" and
+				opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne)) then
+					oppThreeAdjsTopRightDiag(1) <= '1';
 				else
 					oppThreeAdjsTopRightDiag(1) <= '0';
 				end if;
 				
-				if(row >= "001" and row <= "100" and column >=  "001" and column <= "100") then
-					oppThreeAdjsTopRightDiag(2) <= opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo);
+				if(row >= "001" and row <= "100" and column >=  "001" and column <= "100" and
+				opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo)) then
+					oppThreeAdjsTopRightDiag(2) <= '1';
 				else
 					oppThreeAdjsTopRightDiag(2) <= '0';
 				end if;
 				
-				if(row <= "011" and column >= "011") then
-					oppThreeAdjsTopRightDiag(3) <= opponent_board(rowPlusOne)(columnMinusOne) and opponent_board(rowPlusTwo)(columnPlusTwo) and opponent_board(rowPlusThree)(columnPlusThree);
+				if(row <= "011" and column >= "011" and
+				opponent_board(rowPlusOne)(columnMinusOne) and opponent_board(rowPlusTwo)(columnPlusTwo) and opponent_board(rowPlusThree)(columnPlusThree)) then
+					oppThreeAdjsTopRightDiag(3) <= '1';
 				else
 					oppThreeAdjsTopRightDiag(3) <= '0';
 				end if;
 				
 				--top-left diagonal checks
-				if(row <= "011" and column >= "011" ) then
-					oppThreeAdjsTopLeftDiag(0) <= opponent_board(rowMinusThree)(columnMinusThree) and opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne);
+				if(row <= "011" and column >= "011" and
+				opponent_board(rowMinusThree)(columnMinusThree) and opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne)) then
+					oppThreeAdjsTopLeftDiag(0) <= '1';
 				else
 					oppThreeAdjsTopLeftDiag(0) <= '0';
 				end if;
 				
-				if(row >= "001" and row <= "100" and column >= "010" and column <= "101" ) then
-					oppThreeAdjsTopLeftDiag(1) <= opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne);
+				if(row >= "001" and row <= "100" and column >= "010" and column <= "101" and
+				opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne)) then
+					oppThreeAdjsTopLeftDiag(1) <= '1';
 				else
 					oppThreeAdjsTopLeftDiag(1) <= '0';
 				end if;
 				
-				if(row >= "010" and row <= "101" and column >=  "001" and column <= "100" ) then
-					oppThreeAdjsTopLeftDiag(2) <= opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo);
+				if(row >= "010" and row <= "101" and column >=  "001" and column <= "100" and
+				opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo)) then
+					oppThreeAdjsTopLeftDiag(2) <= '1';
 				else
 					oppThreeAdjsTopLeftDiag(2) <= '0';
 				end if;
 				
-				if(row >= "011" and column <= "011" ) then
-					oppThreeAdjsTopLeftDiag(3) <= opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo) and opponent_board(rowPlusThree)(columnPlusThree);
+				if(row >= "011" and column <= "011" and
+				opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo) and opponent_board(rowPlusThree)(columnPlusThree)) then
+					oppThreeAdjsTopLeftDiag(3) <= '1';
 				else
 					oppThreeAdjsTopLeftDiag(3) <= '0';
 				end if;
