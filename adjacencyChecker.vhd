@@ -21,97 +21,196 @@ entity AdjacencyChecker is
 		clk : in std_logic;
 		
 		-- game boards
-		master_board : in GAME_BOARD;
-		input_board : in GAME_BOARD;
+		master_board   : in GAME_BOARD;
+		opponent_board : in GAME_BOARD;
+		own_board      : in GAME_BOARD;
+		row            : in std_logic_vector(2 downto 0);
+		column         : in std_logic_vector(2 downto 0);
 		
 		-- enable signal
 		enable : in std_logic;
 		
 		-- output decision
 		-- played column (0 through 7)
-		play_col : out std_logic_vector(2 downto 0);
+		num_own_adjacencies : out std_logic_vector(1 downto 0);
+		player_can_win      : out std_logic;
+		opp_can_win         : out std_logic;
+		player_two_adjs     : out std_logic;
+		player_one_adj      : out std_logic;
 		-- validity signal
 		valid : out std_logic
 	);
 end AdjacencyChecker;
 
 architecture Behavioral of AdjacencyChecker is
-	signal move_calculated : std_logic := '0';
-	signal horizontalSelection : array(5 downto 0) of std_logic_vector(3 downto 0);
-	signal verticalSelection : array (6 downto 0) of std_logic_vector(3 downto 0);
-	
-	--Composite valid bit vector
-	signal doneValue : std_logic_vector(3 downto 0);
-	
-	signal verticalDone : std_logic := '0';
-	signal horizontalDone : std_logic := '0';
-	signal topRightDiagonalDone : std_logic := '1';
-	signal topLeftDiagonalDone : std_logic := '1';
-	
-	signal horizontalColSel : std_logic_vector(2 downto 0);
-	signal verticalColSel   : std_logic_vector(2 downto 0);
-	signal trColSel         : std_logic_vector(2 downto 0);
-	signal tlColSel         : std_logic_vector(2 downto 0);
-	
-	type STATE is (
+
+	type AI_STATE is (
 		ST_IDLE,
-		ST_WORKING,
+		ST_CALCULATE,
+		ST_JOIN,
 		ST_DONE
 	);
-	signal state : STATE := ST_IDLE;
 	
---Thinking takes ~4 clock cycles
---Want to choose a block of four slots. See if three are filled with one player's pieces.
---If so, see if the remaining piece is occupied, if not, select that as the play column.
+	signal rowMinusThree : std_logic_vector(2 downto 0);
+	signal rowMinusTwo   : std_logic_vector(2 downto 0);
+	signal rowMinusOne   : std_logic_vector(2 downto 0);
+	
+	signal rowPlusOne    : std_logic_vector(2 downto 0);
+	signal rowPlusTwo    : std_logic_vector(2 downto 0);
+	signal rowPlusThree  : std_logic_vector(2 downto 0);
+	
+	signal columnMinusThree : std_logic_vector(2 downto 0);
+	signal columnMinusTwo   : std_logic_vector(2 downto 0);
+	signal columnMinusOne   : std_logic_vector(2 downto 0);
+	
+	signal columnPlusOne    : std_logic_vector(2 downto 0);
+	signal columnMinusTwo   : std_logic_vector(2 downto 0);
+	signal columnMinusThree : std_logic_vector(2 downto 0);
+	
+	signal state: AI_STATE := ST_IDLE;
+	
+	signal oppThreeAdjsHoriz : std_logic_vector(3 downto 0);
+	signal oppThreeAdjsVert  : std_logic;
+	signal oppThreeAdjsTopRightDiag : std_logic_vector(3 downto 0);
+	signal oppThreeAdjsTopLeftDiag  : std_logic_vector(3 downto 0);
 begin
-	doneValue <= (verticalDone + horizontalDone + topRightDiagonalDone + topLeftDiagonalDone);
 
-	horizontalCheck : process(clk, state)
-	signal leadingColumn: std_logic_vector (2 downto 0) := "011";
+	rowMinusThree <= row - "11";
+	rowMinusTwo   <= row - "10";
+	rowMinusOne   <= row - "01";
+	
+	rowPlusOne    <= row + "01";
+	rowPlusTwo    <= row + "10";
+	rowPlusThree  <= row + "11";
+	
+	columnMinusThree <= column - "11";
+	columnMinusTwo   <= column - "10";
+	columnMinusOne   <= column - "01";
+	
+	columnPlusOne    <= column + "01";
+	columnPlusTwo    <= column + "10";
+	columnPlusThree  <= column + "11";
+
+	--opponent adjacency check
+	checkOpponent : process(clk, state)
 	begin
 		if (rising_edge(clk)) then
-			if (state = ST_WORKING) then
-				for row in "000" to "101" loop
-					if(leadingColumn = "111") then
-						exit;
-					end if;
-					
-					horizontalSelection(row) = input_board(row)(leadingColumn downto leadingColumn-3);
-					--funky code that checks if three of the four bit selection are 1
-					if((horizontalSelection(row)(0) xor horizontalSelection(row)(1)) xor (horizontalSelection(row)(2) xor horizontalSelection(row)(3))) then
-						case horizontalSelection is
-							when "1110" => horizontalColSel <= leadingColumn;
-							when "1101" => horizontalColSel <= leadingColumn-"001";
-							when "1011" => horizontalColSel <= leadingColumn-"010";
-							when "0111" => horizontalColSel <= leadingColumn-"011";
-							when others => horizontalColSel <= "111"; --invalid value;
-						end case;
-						
-						if(horizontalColSel != "111") then
-							horizontalDone <= '1';
-							exit; --leave inner loop
-						end if;
-					else
-						leadingColumn <= leadingColumn + 1;
-					end if;
-				end loop;
-			end if;		
-		end if;	
-	end process horizontalCheck;		
+			if(state = ST_WORKING) then
+				--horizontal checks
+				if(column >= "011") then
+					oppThreeAdjsHoriz(0) <= opponent_board(row)(columnMinusThree) and opponent_board(row)(columnMinusTwo) and opponent_board(row)(columnMinusOne);
+				else
+					oppThreeAdjsHoriz(0) <= '0';
+				end if;
+				
+				if(column >= "010" and column <= "101" ) then
+					oppThreeAdjsHoriz(1) <= opponent_board(row)(columnMinusTwo) and opponent_board(row)(columnMinusOne) and opponent_board(row)(columnPlusOne);
+				else
+					oppThreeAdjsHoriz(1) <= '0';
+				end if;
+				
+				if(column >=  "001" and column <= "100") then
+					oppThreeAdjsHoriz(2) <= opponent_board(row)(columnMinusOne) and opponent_board(row)(columnPlusOne) and opponent_board(row)(columnPlusTwo);
+				else
+					oppThreeAdjsHoriz(2) <= '0';
+				end if;
+				
+				if(column <= "011") then
+					oppThreeAdjsHoriz(3) <= opponent_board(row)(columnPlusOne) and opponent_board(row)(columnPlusTwo) and opponent_board(row)(columnPlusThree);
+				else
+					oppThreeAdjsHoriz(3) <= '0';
+				end if;
+				
+				--vertical checks
+				if(row >= "011") then
+					oppThreeAdjsVert <= opponent_board(rowMinusOne)(column) and opponent_board(rowMinusTwo)(column) and opponent_board(rowMinusThree)(column);
+				else
+					oppThreeAdjsVert <= '0';
+				end if;
+				
+				--top-right diagonal checks
+				if(row >= "011" and column >= "011") then
+					oppThreeAdjsTopRightDiag(0) <= opponent_board(rowMinusThree)(columnMinusThree) and opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne);
+				else
+					oppThreeAdjsTopRightDiag(0) <= '0';
+				end if;
+				
+				if(row >= "010" and row <= "101" and column >= "010" and column <= "101") then
+					oppThreeAdjsTopRightDiag(1) <= opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne);
+				else
+					oppThreeAdjsTopRightDiag(1) <= '0';
+				end if;
+				
+				if(row >= "001" and row <= "100" and column >=  "001" and column <= "100") then
+					oppThreeAdjsTopRightDiag(2) <= opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo);
+				else
+					oppThreeAdjsTopRightDiag(2) <= '0';
+				end if;
+				
+				if(row <= "011" and column >= "011") then
+					oppThreeAdjsTopRightDiag(3) <= opponent_board(rowPlusOne)(columnMinusOne) and opponent_board(rowPlusTwo)(columnPlusTwo) and opponent_board(rowPlusThree)(columnPlusThree);
+				else
+					oppThreeAdjsTopRightDiag(3) <= '0';
+				end if;
+				
+				--top-left diagonal checks
+				if(row <= "011" and column >= "011" ) then
+					oppThreeAdjsTopLeftDiag(0) <= opponent_board(rowMinusThree)(columnMinusThree) and opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne);
+				else
+					oppThreeAdjsTopLeftDiag(0) <= '0';
+				end if;
+				
+				if(row >= "001" and row <= "100" and column >= "010" and column <= "101" ) then
+					oppThreeAdjsTopLeftDiag(1) <= opponent_board(rowMinusTwo)(columnMinusTwo) and opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne);
+				else
+					oppThreeAdjsTopLeftDiag(1) <= '0';
+				end if;
+				
+				if(row >= "010" and row <= "101" and column >=  "001" and column <= "100" ) then
+					oppThreeAdjsTopLeftDiag(2) <= opponent_board(rowMinusOne)(columnMinusOne) and opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo);
+				else
+					oppThreeAdjsTopLeftDiag(2) <= '0';
+				end if;
+				
+				if(row >= "011" and column <= "011" ) then
+					oppThreeAdjsTopLeftDiag(3) <= opponent_board(rowPlusOne)(columnPlusOne) and opponent_board(rowPlusTwo)(columnPlusTwo) and opponent_board(rowPlusThree)(columnPlusThree);
+				else
+					oppThreeAdjsTopLeftDiag(3) <= '0';
+				end if;
+			
+			elsif(state = ST_CALCULATE) then
+				if (oppThreeAdjsHoriz = "0000" AND oppThreeAdjsVert = '0' AND oppThreeAdjsTopRightDiag = "0000" and oppThreeAdjsTopLeftDiag = "0000") then
+					opp_can_win <= '0';
+				else
+					opp_can_win <= '1';
+				end if;
+			end if;
+		end if;
+	end process checkOpponent;
+
+	--own adjacency calculation
 	
-	updateState : process(clk, state, turn, move_calculated)
+	
+	updateState : process(clk, state)
 	begin
 		if (rising_edge(clk)) then
 			case state is
-				when ST_WORKING =>
+				when ST_IDLE =>
 					if (enable = '1') then
 						state <= ST_WORKING;
 					end if;
-				when ST_WORKING =>
+				when ST_CALCULATE =>
 					if (enable = '0') then
 						state <= ST_IDLE;
-					if (ready = "11") then
-						state <= ST_DONE
+					else
+						state <= ST_JOIN;
+					end if;
+				when ST_JOIN =>
+					if (enable = '0') then
+						state <= ST_IDLE;
+					else
+						state <= ST_DONE;
+					end if;
 				when ST_DONE =>
 					state <= ST_IDLE;
 			end case;
@@ -119,7 +218,7 @@ begin
 	end process updateState;
 	
 	-- asynchronously update the played handshake signal
-	with move_calculated select played <=
+	with state select played <=
 		'1' when '1',
 		'0' when others;
 end Behavioral;

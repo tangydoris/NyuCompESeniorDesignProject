@@ -1256,4 +1256,3 @@ begin
 	end process updateState;
 	
 end Behavioral;
-
