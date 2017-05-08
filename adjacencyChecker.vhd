@@ -35,7 +35,7 @@ entity AdjacencyChecker is
 		player_two_adjs     : out std_logic;
 		player_one_adj      : out std_logic;
 		-- validity signal
-		valid : out std_logic
+		ready : out std_logic
 	);
 end AdjacencyChecker;
 
