@@ -83,12 +83,13 @@ architecture Behavioral of ArtificialIntelligenceModule is
 
 	Inst_Column_0_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			master_board => master_board,
+			clk            => clk,
+			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(0),
 			column         => "000",
-			enable         => (state = ST_PLAY),
+			enable         => AdjEnable,
 			player_can_win => player_can_win_vec(0),
 			opp_can_win    => opp_can_win_vec(0),
 			player_two_adjs=> player_two_adjs_vec(0),
@@ -98,12 +99,13 @@ architecture Behavioral of ArtificialIntelligenceModule is
 			
 	Inst_Column_1_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
+	      clk            => clk,
 			master_board => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(1),
 			column         => "001",
-			enable         => (state = ST_PLAY),
+			enable         => AdjEnable,
 			player_can_win => player_can_win_vec(1),
 			opp_can_win    => opp_can_win_vec(1),
 			player_two_adjs=> player_two_adjs_vec(1),
@@ -113,12 +115,13 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	
 	Inst_Column_2_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			master_board => master_board,
+			clk            => clk,
+			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(2),
 			column         => "010",
-			enable         => (state = ST_PLAY),
+			enable         => AdjEnable,
 			player_can_win => player_can_win_vec(2),
 			opp_can_win    => opp_can_win_vec(2),
 			player_two_adjs=> player_two_adjs_vec(2),
@@ -128,12 +131,13 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	
 	Inst_Column_3_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			master_board => master_board,
+			clk            => clk,
+			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(3),
 			column         => "011",
-			enable         => (state = ST_PLAY),
+			enable         => AdjEnable,
 			player_can_win => player_can_win_vec(3),
 			opp_can_win    => opp_can_win_vec(3),
 			player_two_adjs=> player_two_adjs_vec(3),
@@ -143,12 +147,13 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	
 	Inst_Column_4_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			master_board => master_board,
+			clk            => clk,
+			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(4),
 			column         => "100",
-			enable         => (state = ST_PLAY),
+			enable         => AdjEnable,
 			player_can_win => player_can_win_vec(4),
 			opp_can_win    => opp_can_win_vec(4),
 			player_two_adjs=> player_two_adjs_vec(4),
@@ -158,12 +163,13 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	
 	Inst_Column_5_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			master_board => master_board,
+			clk            => clk,
+			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(5),
 			column         => "101",
-			enable         => (state = ST_PLAY),
+			enable         => AdjEnable,
 			player_can_win => player_can_win_vec(5),
 			opp_can_win    => opp_can_win_vec(5),
 			player_two_adjs=> player_two_adjs_vec(5),
@@ -173,18 +179,21 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	
 	Inst_Column_6_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			master_board => master_board,
+			clk            => clk,
+			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(6),
 			column         => "110",
-			enable         => (state = ST_PLAY),
+			enable         => adjEnable,
 			player_can_win => player_can_win_vec(6),
 			opp_can_win    => opp_can_win_vec(6),
 			player_two_adjs=> player_two_adjs_vec(6),
 			player_one_adj => player_one_adj_vec(6),
 			ready          => adjCheck_ready_vec(6)
 			);
+	
+	
 	
 	updateEnable : process(state, adjEnable)
 	begin
@@ -195,9 +204,9 @@ architecture Behavioral of ArtificialIntelligenceModule is
 		end if;
 	end process updateEnable;
 	
-	updatePlayPosition : process(clk, state, player_can_win_vec, opp_can_win_vec, player_two_adjs_vec, player_one_adj_vec, adj_check_ready_vec)
+	updatePlayPosition : process(clk, state, next_valid_rows, player_can_win_vec, opp_can_win_vec, player_two_adjs_vec, player_one_adj_vec)
 	begin
-		if(state = ST_CALCULATED or state = ST_READY) then
+		if(state = ST_CALCULATED) then
 			if(not (player_can_win_vec = "0000000")) then
 				--can win, play on that position before anything else
 				if (player_can_win_vec(3) = '1' and next_valid_rows(3) < "110") then
@@ -250,21 +259,21 @@ architecture Behavioral of ArtificialIntelligenceModule is
 				elsif(player_two_adjs_vec(0) = '1' and (next_valid_rows(0) < "110")) then
 					play_col <= "000";
 				end if;
-			elsif(not (player_one_adjs_vec = "0000000")) then
+			elsif(not (player_one_adj_vec = "0000000")) then
 				--Play on position, netting two adjacencies
-				if (player_one_adjs_vec(3) = '1' and next_valid_rows(3) < "110") then
+				if (player_one_adj_vec(3) = '1' and next_valid_rows(3) < "110") then
 					play_col <= "011";
-				elsif(player_one_adjs_vec(4) = '1' and (next_valid_rows(4) < "110")) then
+				elsif(player_one_adj_vec(4) = '1' and (next_valid_rows(4) < "110")) then
 					play_col <= "100";
-				elsif(player_one_adjs_vec(2) = '1' and (next_valid_rows(2) < "110")) then
+				elsif(player_one_adj_vec(2) = '1' and (next_valid_rows(2) < "110")) then
 					play_col <= "010";
-				elsif(player_one_adjs_vec(5) = '1' and (next_valid_rows(5) < "110")) then
+				elsif(player_one_adj_vec(5) = '1' and (next_valid_rows(5) < "110")) then
 					play_col <= "101";
-				elsif(player_one_adjs_vec(1) = '1' and (next_valid_rows(1) < "110")) then
+				elsif(player_one_adj_vec(1) = '1' and (next_valid_rows(1) < "110")) then
 					play_col <= "001";
-				elsif(player_one_adjs_vec(6) = '1' and (next_valid_rows(6) < "110")) then
+				elsif(player_one_adj_vec(6) = '1' and (next_valid_rows(6) < "110")) then
 					play_col <= "110";
-				elsif(player_one_adjs_vec(0) = '1' and (next_valid_rows(0) < "110")) then
+				elsif(player_one_adj_vec(0) = '1' and (next_valid_rows(0) < "110")) then
 					play_col <= "000";
 				end if;
 			else
@@ -289,7 +298,10 @@ architecture Behavioral of ArtificialIntelligenceModule is
 		end if;
 	end process updatePlayPosition;
 
-	move_calculated <= (adjCheck_ready_vec = "1111111");
+	with adjCheck_ready_vec select
+		move_calculated <=
+		'1' when "1111111",
+		'0' when others;
 	
 	updatePlayed : process(clk, state)
 	begin
@@ -315,7 +327,9 @@ architecture Behavioral of ArtificialIntelligenceModule is
 						state <= ST_CALCULATED;
 					end if;
 				when ST_CALCULATED =>
-					state <= ST_IDLE;
+					if (turn = '0') then
+						state <= ST_IDLE;
+					end if;
 			end case;
 		end if;
 	end process updateState;

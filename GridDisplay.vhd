@@ -283,7 +283,7 @@ begin
 	
 	--Determine if the current pixel should be a filled board pixel
 	--Also: Determine which slot the current pixel is in, if at all. Find out whether it's a red piece or a blue piece.
-	boardPixel: process(isTopPart, isBottomPart, isSlotPart, isBorderPart, topPartFill,
+	boardPixel: process(pixel_clk, isTopPart, isBottomPart, isSlotPart, isBorderPart, topPartFill,
 							bottomPartFill, slotPartFill, borderPartFill, fillCond, xdiff, ydiff)
 	begin
 				if(rising_edge(pixel_clk)) then
