@@ -44,7 +44,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 		clk : in std_logic;
 		
 		-- game boards
-		master_board   : in GAME_BOARD;
 		opponent_board : in GAME_BOARD;
 		own_board      : in GAME_BOARD;
 		row            : in std_logic_vector(2 downto 0);
@@ -84,7 +83,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_0_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 			clk            => clk,
-			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(0),
@@ -100,7 +98,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_1_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 	      clk            => clk,
-			master_board => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(1),
@@ -116,7 +113,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_2_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 			clk            => clk,
-			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(2),
@@ -132,7 +128,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_3_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 			clk            => clk,
-			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(3),
@@ -148,7 +143,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_4_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 			clk            => clk,
-			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(4),
@@ -164,7 +158,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_5_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 			clk            => clk,
-			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(5),
@@ -180,7 +173,6 @@ architecture Behavioral of ArtificialIntelligenceModule is
 	Inst_Column_6_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
 			clk            => clk,
-			master_board   => master_board,
 			opponent_board => p1_board,
 			own_board      => own_board,
 			row            => next_valid_rows(6),

@@ -33,6 +33,7 @@ use IEEE.NUMERIC_STD.all;
 
 entity oneToThreeAdjCalc is
 port (
+	clk       : in std_logic;
 	input_vec : in std_logic_vector(2 downto 0);
 	oneAdj    : out std_logic;
 	twoAdjs   : out std_logic;
@@ -44,24 +45,26 @@ architecture Behavioral of oneToThreeAdjCalc is
 
 begin
 
-	process(input_vec)
+	process(clk, input_vec)
 	begin
-		if(input_vec = "111") then
-			threeAdjs <= '1';
-		else
-			threeAdjs <= '0';
-		end if;
+		if (rising_edge(clk)) then
+			if(input_vec = "111") then
+				threeAdjs <= '1';
+			else
+				threeAdjs <= '0';
+			end if;
 		
-		if ((input_vec = "110") or (input_vec = "101") or (input_vec = "011")) then
-			twoAdjs <= '1';
-		else
-			twoAdjs <= '0';
-		end if;
+			if ((input_vec = "110") or (input_vec = "101") or (input_vec = "011")) then
+				twoAdjs <= '1';
+			else
+				twoAdjs <= '0';
+			end if;
 		
-		if ((input_vec = "100") or (input_vec = "010") or (input_vec = "001")) then
-			oneAdj <= '1';
-		else
-			oneAdj <= '0';
+			if ((input_vec = "100") or (input_vec = "010") or (input_vec = "001")) then
+				oneAdj <= '1';
+			else
+				oneAdj <= '0';
+			end if;
 		end if;
 	end process;
 
