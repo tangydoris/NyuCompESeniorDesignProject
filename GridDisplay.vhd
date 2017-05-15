@@ -151,9 +151,9 @@ constant slotSize: integer := 50;
 constant borderSize: integer := 7;
 
 constant displayWidth: integer := 406;
-constant displayHeight: integer := 456;
+constant displayHeight: integer := 412;
 --constant displayWidth : integer := ((numColumns * slotSize) + ((numColumns+1) * borderSize));
---constant displayHeight : integer := (((numRows+1 * slotSize) + ((numRows+1) * borderSize) + borderSize));
+--constant displayHeight : integer := (((numRows * slotSize) + ((numRows+1) * borderSize) + borderSize));
 
 constant X_OFFSET: std_logic_vector(11 downto 0) := std_logic_vector(conv_unsigned(displayWidth, 12));
 constant Y_OFFSET: std_logic_vector(11 downto 0) := std_logic_vector(conv_unsigned(displayHeight, 12));
@@ -283,21 +283,18 @@ begin
 	
 	--Determine if the current pixel should be a filled board pixel
 	--Also: Determine which slot the current pixel is in, if at all. Find out whether it's a red piece or a blue piece.
-	boardPixel: process(isTopPart, isBottomPart, isSlotPart, isBorderPart, topPartFill,
+	boardPixel: process(pixel_clk, isTopPart, isBottomPart, isSlotPart, isBorderPart, topPartFill,
 							bottomPartFill, slotPartFill, borderPartFill, fillCond, xdiff, ydiff)
 	begin
 				if(rising_edge(pixel_clk)) then
-					isTopPart <= (ydiff < slotSize);
-					isBottomPart <= (ydiff >= ((numRows+1) * (borderSize + slotSize)));
-					isSlotPart <= (NOT (isTopPart OR isBottomPart OR isBorderPart));
-					isBorderPart <= (NOT (isTopPart OR isBottomPart) AND ((conv_integer(ydiff) mod (slotSize + borderSize)) >= slotSize));
-	 
-	
-					topPartFill <= (isTopPart AND ((xdiff < borderSize) or (xdiff > (X_OFFSET - 1 - borderSize))));
+					isBottomPart <= (ydiff >= (((numRows) * (borderSize + slotSize)) + borderSize));
+					isSlotPart <= (NOT (isBottomPart OR isBorderPart));
+					isBorderPart <= (NOT (isBottomPart) AND (((conv_integer(ydiff) + slotSize) mod (slotSize + borderSize)) >= slotSize));
+					
 					bottomPartFill <= (isBottomPart AND ((xdiff < borderSize) or (xdiff > (X_OFFSET - 1 - borderSize))));
 					slotPartFill <= (isSlotPart AND ((conv_integer(xdiff) mod (slotSize + borderSize)) < borderSize));
 					borderPartFill <= isBorderPart;
-					fillCond <= (topPartFill) OR (bottomPartFill) OR (slotPartFill) OR (borderPartFill);
+					fillCond <= (bottomPartFill) OR (slotPartFill) OR (borderPartFill);
 				end if;
 					
 					

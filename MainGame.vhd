@@ -95,6 +95,7 @@ architecture Behavioral of MainGame is
 	signal p2_board : GAME_BOARD := (others => (others => '0'));
 	
 	-- size-7 vector that indicates the highest row that can be filled in each column (rows 0 - 5)
+	-- Note: next_valid_rows can be loaded the value 6 in implementation to denote that the column is full
 	signal next_valid_rows : VALID_ROWS := (others => (others => '0'));
 	
 	-- clock divider and annode number of 7-segment display
@@ -1370,4 +1371,3 @@ begin
 	end process updateState;
 	
 end Behavioral;
-

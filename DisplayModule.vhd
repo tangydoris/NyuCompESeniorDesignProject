@@ -51,47 +51,6 @@ entity DisplayModule is
 end DisplayModule;
 
 architecture Behavioral of DisplayModule is
-
-  COMPONENT MouseCtl
-  GENERIC
-  (
-     SYSCLK_FREQUENCY_HZ : integer := 100000000;
-     CHECK_PERIOD_MS     : integer := 500;
-     TIMEOUT_PERIOD_MS   : integer := 100
-  );
-  PORT(
-      clk : IN std_logic;
-      rst : IN std_logic;
-      value : IN std_logic_vector(11 downto 0);
-      setx : IN std_logic;
-      sety : IN std_logic;
-      setmax_x : IN std_logic;
-      setmax_y : IN std_logic;    
-      ps2_clk : INOUT std_logic;
-      ps2_data : INOUT std_logic;      
-      xpos : OUT std_logic_vector(11 downto 0);
-      ypos : OUT std_logic_vector(11 downto 0);
-      zpos : OUT std_logic_vector(3 downto 0);
-      left : OUT std_logic;
-      middle : OUT std_logic;
-      right : OUT std_logic;
-      new_event : OUT std_logic
-      );
-  END COMPONENT;
-
-  COMPONENT MouseDisplay
-  PORT(
-      pixel_clk : IN std_logic;
-      xpos : IN std_logic_vector(11 downto 0);
-      ypos : IN std_logic_vector(11 downto 0);
-      hcount : IN std_logic_vector(11 downto 0);
-      vcount : IN std_logic_vector(11 downto 0);          
-      enable_mouse_display_out : OUT std_logic;
-      red_out : OUT std_logic_vector(3 downto 0);
-      green_out : OUT std_logic_vector(3 downto 0);
-      blue_out : OUT std_logic_vector(3 downto 0)
-      );
-  END COMPONENT;
   
   Component BoardDisplay
   PORT(
@@ -176,29 +135,6 @@ end component;
   signal vga_blue_reg  : std_logic_vector(3 downto 0) := (others =>'0');
   
   -------------------------------------------------------------------------
-  --Mouse pointer signals
-  -------------------------------------------------------------------------
-  
-  -- Mouse data signals
-  signal MOUSE_X_POS: std_logic_vector (11 downto 0);
-  signal MOUSE_Y_POS: std_logic_vector (11 downto 0);
-  signal MOUSE_X_POS_REG: std_logic_vector (11 downto 0);
-  signal MOUSE_Y_POS_REG: std_logic_vector (11 downto 0);
-  
-  -- Mouse cursor display signals
-  signal mouse_cursor_red    : std_logic_vector (3 downto 0) := (others => '0');
-  signal mouse_cursor_blue   : std_logic_vector (3 downto 0) := (others => '0');
-  signal mouse_cursor_green  : std_logic_vector (3 downto 0) := (others => '0');
-  -- Mouse cursor enable display signals
-  signal enable_mouse_display:  std_logic;
-  -- Registered Mouse cursor display signals
-  signal mouse_cursor_red_dly   : std_logic_vector (3 downto 0) := (others => '0');
-  signal mouse_cursor_blue_dly  : std_logic_vector (3 downto 0) := (others => '0');
-  signal mouse_cursor_green_dly : std_logic_vector (3 downto 0) := (others => '0');
-  -- Registered Mouse cursor enable display signals
-  signal enable_mouse_display_dly  :  std_logic;
-  
-  -------------------------------------------------------------------------
   --Board signals
   ------------------------------------------------------------------------- 
   --Board display signals
@@ -239,37 +175,6 @@ begin
    (
     clk_in1 => CLK_I,
     clk_out1 => pxl_clk);
-  
-    
-    ----------------------------------------------------------------------------------
-    -- Mouse Controller
-    ----------------------------------------------------------------------------------
-       Inst_MouseCtl: MouseCtl
-       GENERIC MAP
-    (
-       SYSCLK_FREQUENCY_HZ => 108000000,
-       CHECK_PERIOD_MS     => 500,
-       TIMEOUT_PERIOD_MS   => 100
-    )
-       PORT MAP
-       (
-          clk            => pxl_clk,
-          rst            => '0',
-          xpos           => MOUSE_X_POS,
-          ypos           => MOUSE_Y_POS,
-          zpos           => open,
-          left           => open,
-          middle         => open,
-          right          => open,
-          new_event      => open,
-          value          => x"000",
-          setx           => '0',
-          sety           => '0',
-          setmax_x       => '0',
-          setmax_y       => '0',
-          ps2_clk        => PS2_CLK,
-          ps2_data       => PS2_DATA
-       );
        
        ---------------------------------------------------------------
        
@@ -329,22 +234,7 @@ begin
          -- active signal
          active <= '1' when h_cntr_reg_dly < FRAME_WIDTH and v_cntr_reg_dly < FRAME_HEIGHT
                    else '0';
-       
-       
-       --------------------
-       
-       -- Register Inputs
-       
-       --------------------
-    register_inputs: process (pxl_clk)
-    begin
-        if (rising_edge(pxl_clk)) then  
-          if v_sync_reg = V_POL then
-            MOUSE_X_POS_REG <= MOUSE_X_POS;
-            MOUSE_Y_POS_REG <= MOUSE_Y_POS;
-          end if;   
-        end if;
-    end process register_inputs;
+						 
      ---------------------------------------
      
      -- Generate moving colorbar background
@@ -364,27 +254,7 @@ begin
      bg_red <= "0000"; --(7 downto 4);
      bg_green <= "0000";
      bg_blue <= "0000";
-     
-     
-     ----------------------------------
-     
-     -- Mouse Cursor display instance
-     
-     ----------------------------------
-        Inst_MouseDisplay: MouseDisplay
-        PORT MAP 
-        (
-           pixel_clk   => pxl_clk,
-           xpos        => MOUSE_X_POS_REG, 
-           ypos        => MOUSE_Y_POS_REG,
-           hcount      => h_cntr_reg,
-           vcount      => v_cntr_reg,
-           enable_mouse_display_out  => enable_mouse_display,
-           red_out     => mouse_cursor_red,
-           green_out   => mouse_cursor_green,
-           blue_out    => mouse_cursor_blue
-        );
-		  
+
      ----------------------------------
      
      -- Board display instance
@@ -421,16 +291,10 @@ begin
             bg_red_dly           <= bg_red;
             bg_green_dly        	<= bg_green;
             bg_blue_dly          <= bg_blue;
-            
-            mouse_cursor_red_dly    <= mouse_cursor_red;
-				mouse_cursor_green_dly  <= mouse_cursor_green;
-            mouse_cursor_blue_dly   <= mouse_cursor_blue;
 				
 				board_display_red_dly   <= board_display_red;
 				board_display_green_dly <= board_display_green;
 				board_display_blue_dly  <= board_display_blue;
-            
-            enable_mouse_display_dly   <= enable_mouse_display;
 				
 				enable_board_display_dly   <= enable_board_display;
             
@@ -446,14 +310,11 @@ begin
     
     ----------------------------------
 
-    vga_red <= mouse_cursor_red_dly when enable_mouse_display_dly = '1' else
-					board_display_red_dly when enable_board_display_dly = '1' else
+    vga_red <= board_display_red_dly when enable_board_display_dly = '1' else
                bg_red_dly;
-    vga_green <= mouse_cursor_green_dly when enable_mouse_display_dly = '1' else
-					board_display_green_dly when enable_board_display_dly = '1' else
+    vga_green <= board_display_green_dly when enable_board_display_dly = '1' else
                bg_green_dly;
-    vga_blue <= mouse_cursor_blue_dly when enable_mouse_display_dly = '1' else
-					board_display_blue_dly when enable_board_display_dly = '1' else
+    vga_blue <= board_display_blue_dly when enable_board_display_dly = '1' else
                bg_blue_dly;
            
     ------------------------------------------------------------
