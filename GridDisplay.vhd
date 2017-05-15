@@ -265,7 +265,7 @@ begin
 	
 	rowColumn: process(xdiff, ydiff, currRow, currColumn, redPieces, bluePieces, isRed, isBlue, inBoard)
 	begin
-			currRow <= (numRows - ((conv_integer(ydiff) / (slotSize + borderSize))));
+			currRow <= ((numRows-1) - ((conv_integer(ydiff) / (slotSize + borderSize))));
 			currColumn <= (((conv_integer(xdiff) - borderSize)) / (slotSize + borderSize));
 			
 			inBoard <= ((currRow < 6) AND (currColumn < 7) AND (currRow >= 0) AND (currColumn >= 0));
