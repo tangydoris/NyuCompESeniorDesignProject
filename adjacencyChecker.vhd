@@ -1,14 +1,12 @@
 ----------------------------------------------------------------------------------
 -- Create Date:    	12:48:29 02/26/2017 
--- Design Name: 		Connect Four A.I. Module
--- Module Name:   	Artificial Intelligence Module - Behavioral 
+-- Design Name: 		Connect Four Adjacency Checker for the A.I. Module
+-- Module Name:   	Adjacency Checker - Behavioral 
 -- Project Name: 		Connect Four
 -- Target Devices:	Nexys 4 DDR
--- Description: 		Module for the Connect Four game that implements artificial intelligence for a machine player.
+-- Description: 		Helper module for the A.I. Module. Given a matrix, this sub-module calculates the largest line of pieces that exists.
 ----------------------------------------------------------------------------------
 
---Given a matrix, calculates the largest line of pieces that exists.
---Outputs a true/false bit, as well as 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
@@ -16,7 +14,6 @@ use work.GamePackage.GAME_BOARD;
 
 entity AdjacencyChecker is
 	port (
-		-- system clock (?)
 		clk : in std_logic;
 		
 		-- game boards
@@ -506,4 +503,3 @@ begin
 		'1' when ST_DONE,
 		'0' when others;
 end Behavioral;
-

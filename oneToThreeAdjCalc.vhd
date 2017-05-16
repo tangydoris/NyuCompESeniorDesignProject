@@ -1,35 +1,16 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date:    00:03:35 05/08/2017 
--- Design Name: 
--- Module Name:    oneToThreeAdjCalc - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description: 
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
+-- Create Date:    	12:48:29 02/26/2017 
+-- Design Name: 		Connect Four Adjacency Checker for the A.I. Module
+-- Module Name:   	Adjacency Checker - Behavioral 
+-- Project Name: 		Connect Four
+-- Target Devices:	Nexys 4 DDR
+-- Description: 		Given a 3-slot selection from the game board, oneToThreeAdjCalc determines how many pieces a player has in this selection. The possible values that a player would be interested in range from one to three, hence the name of the module. Three 1-bit std_logic signals are used as output, with each one corresponding to how many pieces a player has in this adjacency selection. That is to say, there is an output signal for the player having three pieces, one for having two pieces, and one for one piece.
 ----------------------------------------------------------------------------------
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.all;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx primitives in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity oneToThreeAdjCalc is
 port (
@@ -66,4 +47,3 @@ begin
 	end process;
 
 end Behavioral;
-

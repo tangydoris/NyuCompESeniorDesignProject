@@ -5,32 +5,14 @@
 -- Target Devices:	Nexys 4 DDR
 -- Description: 		Module for the Connect Four game that implements display to a screen via VGA.
 ----------------------------------------------------------------------------------
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
--- 
--- Create Date: 04/25/2014 02:10:40 PM
--- Design Name: 
--- Module Name: DisplayModule - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
-----------------------------------------------------------------------------------
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use ieee.math_real.all;
 use IEEE.NUMERIC_STD.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
-use work.GamePackage.all;
+use work.GamePackage.GAME_BOARD;
 
 entity DisplayModule is
     port (

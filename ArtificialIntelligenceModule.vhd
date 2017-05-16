@@ -10,8 +10,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
-use work.GamePackage.GAME_BOARD;
-use work.GamePackage.VALID_ROWS;
+use work.GamePackage.all;
 
 entity ArtificialIntelligenceModule is
 	port (
@@ -37,30 +36,6 @@ entity ArtificialIntelligenceModule is
 end ArtificialIntelligenceModule;
 
 architecture Behavioral of ArtificialIntelligenceModule is
-
-	component AdjacencyChecker is
-	port (
-		-- system clock (?)
-		clk : in std_logic;
-		
-		-- game boards
-		master_board   : in GAME_BOARD;
-		opponent_board : in GAME_BOARD;
-		own_board      : in GAME_BOARD;
-		row            : in std_logic_vector(2 downto 0);
-		column         : in std_logic_vector(2 downto 0);
-		
-		-- enable signal
-		enable : in std_logic;
-		
-		player_can_win      : out std_logic;
-		opp_can_win         : out std_logic;
-		player_two_adjs     : out std_logic;
-		player_one_adj      : out std_logic;
-		-- validity signal
-		ready : out std_logic
-	);
-	end component;
 	
 	signal move_calculated : std_logic := '0';
 	type AI_STATE is (
@@ -83,117 +58,115 @@ architecture Behavioral of ArtificialIntelligenceModule is
 
 	Inst_Column_0_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			clk            => clk,
-			master_board   => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(0),
-			column         => "000",
-			enable         => AdjEnable,
-			player_can_win => player_can_win_vec(0),
-			opp_can_win    => opp_can_win_vec(0),
-			player_two_adjs=> player_two_adjs_vec(0),
-			player_one_adj => player_one_adj_vec(0),
-			ready          => adjCheck_ready_vec(0)
-			);
+		clk            => clk,
+		master_board   => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(0),
+		column         => "000",
+		enable         => AdjEnable,
+		player_can_win => player_can_win_vec(0),
+		opp_can_win    => opp_can_win_vec(0),
+		player_two_adjs=> player_two_adjs_vec(0),
+		player_one_adj => player_one_adj_vec(0),
+		ready          => adjCheck_ready_vec(0)
+	);
 			
 	Inst_Column_1_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-	      clk            => clk,
-			master_board => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(1),
-			column         => "001",
-			enable         => AdjEnable,
-			player_can_win => player_can_win_vec(1),
-			opp_can_win    => opp_can_win_vec(1),
-			player_two_adjs=> player_two_adjs_vec(1),
-			player_one_adj => player_one_adj_vec(1),
-			ready          => adjCheck_ready_vec(1)
-			);
+		clk            => clk,
+		master_board => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(1),
+		column         => "001",
+		enable         => AdjEnable,
+		player_can_win => player_can_win_vec(1),
+		opp_can_win    => opp_can_win_vec(1),
+		player_two_adjs=> player_two_adjs_vec(1),
+		player_one_adj => player_one_adj_vec(1),
+		ready          => adjCheck_ready_vec(1)
+	);
 	
 	Inst_Column_2_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			clk            => clk,
-			master_board   => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(2),
-			column         => "010",
-			enable         => AdjEnable,
-			player_can_win => player_can_win_vec(2),
-			opp_can_win    => opp_can_win_vec(2),
-			player_two_adjs=> player_two_adjs_vec(2),
-			player_one_adj => player_one_adj_vec(2),
-			ready          => adjCheck_ready_vec(2)
-			);
+		clk            => clk,
+		master_board   => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(2),
+		column         => "010",
+		enable         => AdjEnable,
+		player_can_win => player_can_win_vec(2),
+		opp_can_win    => opp_can_win_vec(2),
+		player_two_adjs=> player_two_adjs_vec(2),
+		player_one_adj => player_one_adj_vec(2),
+		ready          => adjCheck_ready_vec(2)
+	);
 	
 	Inst_Column_3_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			clk            => clk,
-			master_board   => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(3),
-			column         => "011",
-			enable         => AdjEnable,
-			player_can_win => player_can_win_vec(3),
-			opp_can_win    => opp_can_win_vec(3),
-			player_two_adjs=> player_two_adjs_vec(3),
-			player_one_adj => player_one_adj_vec(3),
-			ready          => adjCheck_ready_vec(3)
-			);
+		clk            => clk,
+		master_board   => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(3),
+		column         => "011",
+		enable         => AdjEnable,
+		player_can_win => player_can_win_vec(3),
+		opp_can_win    => opp_can_win_vec(3),
+		player_two_adjs=> player_two_adjs_vec(3),
+		player_one_adj => player_one_adj_vec(3),
+		ready          => adjCheck_ready_vec(3)
+	);
 	
 	Inst_Column_4_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			clk            => clk,
-			master_board   => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(4),
-			column         => "100",
-			enable         => AdjEnable,
-			player_can_win => player_can_win_vec(4),
-			opp_can_win    => opp_can_win_vec(4),
-			player_two_adjs=> player_two_adjs_vec(4),
-			player_one_adj => player_one_adj_vec(4),
-			ready          => adjCheck_ready_vec(4)
-			);
+		clk            => clk,
+		master_board   => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(4),
+		column         => "100",
+		enable         => AdjEnable,
+		player_can_win => player_can_win_vec(4),
+		opp_can_win    => opp_can_win_vec(4),
+		player_two_adjs=> player_two_adjs_vec(4),
+		player_one_adj => player_one_adj_vec(4),
+		ready          => adjCheck_ready_vec(4)
+	);
 	
 	Inst_Column_5_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			clk            => clk,
-			master_board   => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(5),
-			column         => "101",
-			enable         => AdjEnable,
-			player_can_win => player_can_win_vec(5),
-			opp_can_win    => opp_can_win_vec(5),
-			player_two_adjs=> player_two_adjs_vec(5),
-			player_one_adj => player_one_adj_vec(5),
-			ready          => adjCheck_ready_vec(5)
-			);
+		clk            => clk,
+		master_board   => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(5),
+		column         => "101",
+		enable         => AdjEnable,
+		player_can_win => player_can_win_vec(5),
+		opp_can_win    => opp_can_win_vec(5),
+		player_two_adjs=> player_two_adjs_vec(5),
+		player_one_adj => player_one_adj_vec(5),
+		ready          => adjCheck_ready_vec(5)
+	);
 	
 	Inst_Column_6_AdjacencyChecker : AdjacencyChecker
 	PORT MAP(
-			clk            => clk,
-			master_board   => master_board,
-			opponent_board => p1_board,
-			own_board      => own_board,
-			row            => next_valid_rows(6),
-			column         => "110",
-			enable         => adjEnable,
-			player_can_win => player_can_win_vec(6),
-			opp_can_win    => opp_can_win_vec(6),
-			player_two_adjs=> player_two_adjs_vec(6),
-			player_one_adj => player_one_adj_vec(6),
-			ready          => adjCheck_ready_vec(6)
-			);
-	
-	
+		clk            => clk,
+		master_board   => master_board,
+		opponent_board => p1_board,
+		own_board      => own_board,
+		row            => next_valid_rows(6),
+		column         => "110",
+		enable         => adjEnable,
+		player_can_win => player_can_win_vec(6),
+		opp_can_win    => opp_can_win_vec(6),
+		player_two_adjs=> player_two_adjs_vec(6),
+		player_one_adj => player_one_adj_vec(6),
+		ready          => adjCheck_ready_vec(6)
+	);
 	
 	updateEnable : process(state, adjEnable)
 	begin

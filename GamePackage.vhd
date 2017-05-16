@@ -15,6 +15,27 @@ package GamePackage is
 	type GAME_BOARD is array(5 downto 0) of std_logic_vector(6 downto 0);
 	type VALID_ROWS is array(6 downto 0) of std_logic_vector(2 downto 0);
 	
+	component AdjacencyChecker is
+	port (
+		-- system clock
+		clk : in std_logic;
+		-- game boards
+		master_board   : in GAME_BOARD;
+		opponent_board : in GAME_BOARD;
+		own_board      : in GAME_BOARD;
+		row            : in std_logic_vector(2 downto 0);
+		column         : in std_logic_vector(2 downto 0);
+		-- enable signal
+		enable : in std_logic;
+		player_can_win      : out std_logic;
+		opp_can_win         : out std_logic;
+		player_two_adjs     : out std_logic;
+		player_one_adj      : out std_logic;
+		-- validity signal
+		ready : out std_logic
+	);
+	end component;
+	
 	component UserInputModule is
 		port (
 			clk : in std_logic;
